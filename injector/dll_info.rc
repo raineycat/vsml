@@ -1,0 +1,34 @@
+#if _DEBUG
+#define VER_DBG 1
+#else
+#define VER_DBG 0
+#endif
+
+1 VERSIONINFO
+FILEVERSION    0, 1, 1, 0
+PRODUCTVERSION 0, 1, 1, 0
+FILEFLAGSMASK           0
+FILEFLAGS               VER_DBG
+FILEOS                  0x4000
+FILETYPE                2
+FILESUBTYPE             0
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "040904b0"
+        {
+            VALUE "CompanyName", "raineycat (https://reddust.uk)\0"
+            VALUE "FileDescription", "VSML - vivid/stasis mod loader\0"
+            VALUE "FileVersion", "0.1.1.0\0"
+            VALUE "LegalCopyright", "(c) 2025 raineycat\0"
+            VALUE "OriginalFilename", "vsml_injector.dll\0"
+            VALUE "ProductName", "VSML\0"
+            VALUE "ProductVersion", "0.1.1.0\0"
+            VALUE "InternalName", "VSML Injector\0"
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x409, 1200
+    }
+}
