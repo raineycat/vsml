@@ -13,7 +13,7 @@ public class ChartMod : IModInit
     public string ModVersion => "0.0.1";
 
     private Logger _logger = null!;
-    private List<CustomChartInfo> _customCharts = [];
+    private List<IChartProvider> _customCharts = [];
 
     public void SetupMod(IGameEnv gameEnv, Logger logger)
     {
@@ -32,26 +32,21 @@ public class ChartMod : IModInit
                 continue;
             }
 
-            try
-            {
-                var chartInfo = JsonSerializer.Deserialize<CustomChartInfo>(File.ReadAllText(infoPath))!;
-
-                chartInfo.SongFileName = Path.Combine(dir, chartInfo.SongFileName);
-                chartInfo.JacketFileName = Path.Combine(dir, chartInfo.JacketFileName);
-                _customCharts.Add(chartInfo);
-            }
-            catch (Exception e)
-            {
-                _logger.Warning("Failed to load chart from {Dir}: {Exception}", dir, e);
-            }
-            
-            _logger.Information("Loaded {Count} custom charts!", _customCharts.Count);
+            _customCharts.Add(new FolderChartProvider(dir));
         }
+        
+        foreach(var file in Directory.EnumerateFiles(chartsDir, "*.zip"))
+        {
+            _customCharts.Add(new ZippedChartProvider(file));
+        }
+
+        _logger.Information("Loaded {Count} custom charts!", _customCharts.Count);
     }
 
     public void ApplyPatches(IPatchApplicator applicator)
     {
-        applicator.ApplyScript(new CustomChartScript(_customCharts));
+        var chartInfos = _customCharts.Select(p => p.GetChartInfo()).WhereNotNull();
+        applicator.ApplyScript(new CustomChartScript(chartInfos));
         applicator.ApplyPatch(new CustomChartScriptHook());
         
         applicator.ApplyScript(new CustomSongPackScript());
@@ -61,12 +56,16 @@ public class ChartMod : IModInit
         applicator.ApplyPatch(new CustomChartFileScriptHook("gml_GlobalScript_LoadSong"));
         applicator.ApplyPatch(new CustomChartFileScriptHook("gml_GlobalScript_LoadSongData"));
         
-        foreach (var chart in _customCharts)
+        foreach (var provider in _customCharts)
         {
+            var chart = provider.GetChartInfo();
+            if(chart == null)
+                continue;
+
             var audio = new UndertaleEmbeddedAudio
             {
                 Name = applicator.MakeString("VSML_CustomChart_" + chart.Name),
-                Data = File.ReadAllBytes(chart.SongFileName)
+                Data = provider.GetDataFile(chart.SongFileName)
             };
             applicator.GameData.EmbeddedAudio.Add(audio);
 
@@ -90,7 +89,7 @@ public class ChartMod : IModInit
                 Type = applicator.MakeString(Path.GetExtension(chart.SongFileName))
             });
 
-            var jacketImg = GMImage.FromPng(File.ReadAllBytes(chart.JacketFileName));
+            var jacketImg = GMImage.FromPng(provider.GetDataFile(chart.JacketFileName));
             var jacketTex = new UndertaleEmbeddedTexture
             {
                 Name = applicator.MakeString("JacketTex_" + chart.Id),

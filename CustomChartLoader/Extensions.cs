@@ -15,6 +15,9 @@ public static class Extensions
         return list;
     }
 
+    public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> e) where T : class =>
+        e.Where(x => x is not null).Cast<T>();
+
     public static string AppendLine(this string a, string b) => a + b + "\n";
     public static string Quote(this string s) => '"' + s + '"';
 }
