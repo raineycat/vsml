@@ -11,11 +11,9 @@ The DLL hooks the `CreateFileW` function from WinAPI, and looks for two filename
 This allows us to patch the game's data file while leaving the original one intact and in the same place, as well as providing an early enough injection point to modify the data before it gets loaded.
 
 ## Dependencies
-The DLL uses libnethost to find the system's .NET runtime, so one (>=9.0) needs to be installed for this to work.
+The DLL uses libnethost to find the system's .NET runtime, so one needs to be installed for this to work.
 
 MinHook is also used for the purposes specified above, however this is linked statically, so everything is contained within the proxy DLL.
-
-> TODO: Git submodule / meson wrap so we don't have binaries in the repo?
 
 ## Usage
 ### Users
