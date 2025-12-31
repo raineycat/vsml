@@ -47,7 +47,7 @@ public class ChartMod : IModInit
 
         _logger.Information("Loaded {Count} custom charts!", _customCharts.Count);
 
-        var tempDir = Path.Combine(Path.GetTempPath(), "vsml_chart");
+        var tempDir = "_vsml_chart_temp";
         if(Directory.Exists(tempDir))
             Directory.Delete(tempDir, true);
         Directory.CreateDirectory(tempDir);
