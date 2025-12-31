@@ -1,0 +1,25 @@
+﻿<Window x:Class="LoadingWindow.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:lw="clr-namespace:LoadingWindow"
+        mc:Ignorable="d"
+        Title="VSML" Width="500" Height="200"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize" 
+        d:DataContext="{d:DesignInstance lw:MainWindow}">
+    <Window.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#6FF7EE" Offset="0.0" />
+            <GradientStop Color="#F583FF" Offset="0.5" />
+            <GradientStop Color="#FF61A5" Offset="1.0" />
+        </LinearGradientBrush>
+    </Window.Background>
+
+    <StackPanel Orientation="Vertical" VerticalAlignment="Bottom" Margin="25">
+        <TextBlock Text="VSML is loading" FontSize="30" FontWeight="Bold" Margin="0,0,0,10" />
+        <TextBlock Text="{Binding CurrentStatus}" FontSize="18" />
+        <ProgressBar IsIndeterminate="True" Height="20" Margin="0,20,0,0" />
+    </StackPanel>
+</Window>

@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="CustomChartLoader\CustomChartLoader.csproj" Type="Classic C#" />
+  <Project Path="LoadingWindow\LoadingWindow.csproj" Type="Classic C#" />
   <Project Path="ManagedLoader/ManagedLoader.csproj" />
   <Project Path="ModContract\ModContract.csproj" />
   <Project Path="UndertaleModTool\Underanalyzer\Underanalyzer\Underanalyzer.csproj" Type="Classic C#" />

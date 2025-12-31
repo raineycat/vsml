@@ -12,16 +12,16 @@ namespace ManagedLoader;
 
 public class ModLoader : IGameEnv
 {
-    internal static LoaderConfig Config { get; private set; } = new();
     internal static Logger Logger { get; private set; } = null!;
+    internal  LoaderConfig Config { get; private set; } = new();
+    internal IProgressTracker ProgressTracker { get; }
     
     public string ModsFolder { get; }
     public string GameFolder { get; }
 
     private const string _logFilePath = "vsml.log";
     private const string _configFilePath = "vsml.json";
-    
-    private IProgressTracker _progressTracker;
+
     private UndertaleData _gameData = null!;
     private List<IModInit> _modInitializers = [];
 
@@ -34,7 +34,7 @@ public class ModLoader : IGameEnv
     
     public ModLoader()
     {
-        _progressTracker = new DummyProgressTracker();
+        ProgressTracker = new DummyProgressTracker();
         
         if (File.Exists(_configFilePath))
         {
@@ -61,6 +61,14 @@ public class ModLoader : IGameEnv
         
         Logger.Debug("Found game dir: {GameDir}", GameFolder);
         Logger.Debug("Found mods dir: {ModsDir}", ModsFolder);
+        
+        if (Config.EnableLoadingScreen)
+        {
+            const string pipeName = "VSMLProgressTracker";
+            var proc = Process.Start(Path.Combine(ModsFolder, "LoadingWindow.exe"), [pipeName]);
+            Logger.Debug("Started loading window process: {Proc}", proc);
+            ProgressTracker = new NamedPipeProgressTracker(pipeName);
+        }
 
         AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
         {
@@ -76,6 +84,7 @@ public class ModLoader : IGameEnv
         };
         
         Logger.Debug("Starting to scan mods...");
+        ProgressTracker.SetCurrentStep("Searching for mods");
         ScanMods();
         
         Logger.Information("Finished loader pre-init");
@@ -90,6 +99,7 @@ public class ModLoader : IGameEnv
         using (var stream = File.Open(dataFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
         {
             Logger.Debug("Loading data...");
+            ProgressTracker.SetCurrentStep("Loading data fron disk");
             var sw = Stopwatch.StartNew();
             _gameData = UndertaleIO.Read(stream);
             Logger.Information("Finished loading data! Took {ElapsedTime}", sw.Elapsed);
@@ -97,6 +107,7 @@ public class ModLoader : IGameEnv
 
         {
             Logger.Debug("Applying patches...");
+            ProgressTracker.SetCurrentStep("Patching");
             var sw = Stopwatch.StartNew();
             ApplyPatches();
             Logger.Information("Finished applying patches! Took {ElapsedTime}", sw.Elapsed);
@@ -105,19 +116,24 @@ public class ModLoader : IGameEnv
         using (var stream = File.Open(shadowFilePath, FileMode.Create, FileAccess.Write, FileShare.Read))
         {
             Logger.Debug("Writing shadow file...");
+            ProgressTracker.SetCurrentStep("Writing data");
             var sw = Stopwatch.StartNew();
-            UndertaleIO.Write(stream, _gameData);
+            UndertaleIO.Write(stream, _gameData, msg => ProgressTracker.SetCurrentStep("Writing data: " + msg));
             Logger.Information("Finished writing shadow file! Took {ElapsedTime}", sw.Elapsed);
         }
         
         _gameData.Dispose();
         Logger.Information("Finished loader init");
+        ProgressTracker.SetCurrentStep("Finished!");
     }
 
     private void ScanMods()
     {
         foreach (var dll in Directory.EnumerateFiles(ModsFolder, "*.dll", SearchOption.AllDirectories))
         {
+            if(File.Exists(Path.ChangeExtension(dll, "exe")))
+                continue;
+            
             try
             {
                 LoadMod(dll);
@@ -131,6 +147,7 @@ public class ModLoader : IGameEnv
 
     private void LoadMod(string path)
     {
+        ProgressTracker.SetCurrentStep("Loading: " + Path.GetFileName(path));
         var assembly = Assembly.LoadFrom(path);
         foreach (var type in assembly.GetTypes().Where(t => t.GetInterfaces().Any(i => i.Name == "IModInit")))
         {
@@ -139,7 +156,7 @@ public class ModLoader : IGameEnv
             if(mod == null) 
                 continue;
 
-            mod.SetupMod(this, _progressTracker, Logger);
+            mod.SetupMod(this, ProgressTracker, Logger);
             _modInitializers.Add(mod);
             Logger.Information("Loaded mod: {Name} v{Version}", mod.ModName, mod.ModVersion);
         }

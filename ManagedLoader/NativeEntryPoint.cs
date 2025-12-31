@@ -18,6 +18,11 @@ public static class NativeEntryPoint
         {
             File.WriteAllText("VSML Exception.txt", e.ToString());
             return 1;
+        } 
+        finally
+        {
+            if(loaderInst?.ProgressTracker is IDisposable d)
+                d.Dispose();
         }
     }
 
@@ -25,11 +30,9 @@ public static class NativeEntryPoint
     {
         loaderInst = new ModLoader();
 
-        if (ModLoader.Config.PatchingEnabled)
+        if (loaderInst.Config.PatchingEnabled)
         {
-            MessageBox.Info("Starting patching...");
             loaderInst.RunPatching();
-            MessageBox.Info("Finished patching!");
         }
     }
 }

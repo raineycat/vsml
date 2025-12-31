@@ -4,7 +4,7 @@ namespace ManagedLoader;
 
 public class DummyProgressTracker : IProgressTracker
 {
-    public void SetCurrentStep(string name, float progress = 0)
+    public void SetCurrentStep(string name)
     {
         
     }
