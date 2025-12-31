@@ -21,6 +21,7 @@ public class ModLoader : IGameEnv
     private const string _logFilePath = "vsml.log";
     private const string _configFilePath = "vsml.json";
     
+    private IProgressTracker _progressTracker;
     private UndertaleData _gameData = null!;
     private List<IModInit> _modInitializers = [];
 
@@ -33,6 +34,8 @@ public class ModLoader : IGameEnv
     
     public ModLoader()
     {
+        _progressTracker = new DummyProgressTracker();
+        
         if (File.Exists(_configFilePath))
         {
             Config = JsonSerializer.Deserialize<LoaderConfig>(File.ReadAllText(_configFilePath), _jsonConfigOptions) 
@@ -136,7 +139,7 @@ public class ModLoader : IGameEnv
             if(mod == null) 
                 continue;
 
-            mod.SetupMod(this, Logger);
+            mod.SetupMod(this, _progressTracker, Logger);
             _modInitializers.Add(mod);
             Logger.Information("Loaded mod: {Name} v{Version}", mod.ModName, mod.ModVersion);
         }

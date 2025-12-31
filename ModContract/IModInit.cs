@@ -1,5 +1,4 @@
-﻿using Serilog.Core;
-using UndertaleModLib;
+﻿using Serilog;
 
 namespace ModContract;
 
@@ -8,6 +7,6 @@ public interface IModInit
     public string ModName { get; }
     public string ModVersion { get; }
     
-    void SetupMod(IGameEnv gameEnv, Logger logger);
+    void SetupMod(IGameEnv gameEnv, IProgressTracker progressTracker, ILogger logger);
     void ApplyPatches(IPatchApplicator applicator);
 }

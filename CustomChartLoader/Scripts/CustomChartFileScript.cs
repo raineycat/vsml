@@ -8,16 +8,23 @@ public class CustomChartFileScript : IAdditionalScript
 
     public string SourceCode => """
                                 function VSMLChartFileHook(path) {
-                                    debug("VSMLChartFileHook:", path);
+                                    show_debug_message("VSMLChartFileHook:", path);
                                     
                                     if(file_exists(path)) {
-                                        debug("-> AlreadyExists");
+                                        show_debug_message("Already exists");
                                         return path;
                                     }
                                     
-                                    var newPath = string_replace(path, "Charts/", "CustomCharts/");
-                                    debug("-> SetTo:", newPath);
-                                    return newPath;
+                                    var pos = string_last_pos("Charts/", path);
+                                    if(pos <= 0) {
+                                        show_debug_message("Not charts");
+                                        return path;
+                                    }
+                                    
+                                    var pathEnd = string_delete(path, pos, -string_length(path));
+                                    var fixedPath = global.vsml_chart_dir + "/" + pathEnd;
+                                    show_debug_message("Fixed path:", fixedPath);
+                                    return fixedPath;
                                 }
                                 """;
 }

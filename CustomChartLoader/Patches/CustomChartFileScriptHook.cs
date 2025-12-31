@@ -9,9 +9,8 @@ public class CustomChartFileScriptHook(string targetCodeName) : ICodePatch
     public string PatchName => "Redirect custom chart files";
     public string TargetCodeName => targetCodeName;
     
-    public int? Target(List<UndertaleInstruction> instructions)
-    {
-        return instructions.FindIndex(i => i is
+    public int? Target(List<UndertaleInstruction> instructions) =>
+        instructions.FindIndex(i => i is
         {
             Kind: UndertaleInstruction.Opcode.Call,
             Type1: UndertaleInstruction.DataType.Int32,
@@ -20,7 +19,6 @@ public class CustomChartFileScriptHook(string targetCodeName) : ICodePatch
                 Name: { Content: "gml_Script_read_binary_chart" }
             }
         });
-    }
 
     public IEnumerable<UndertaleInstruction> Codegen(UndertaleData gameData, UndertaleCode targetCode)
     {

@@ -42,4 +42,12 @@ public static class PatchHelpers
     {
         return code.FindReferencedLocalVars().First(l => l.Name.Content == name);
     }
+
+    public static UndertaleVariable FindReferencedVar(this UndertaleCode code, Predicate<UndertaleVariable> cond)
+    {
+        return code.Instructions
+            .Where(i => i.ValueVariable != null)
+            .Select(i => i.ValueVariable)
+            .First(v => cond(v));
+    }
 }

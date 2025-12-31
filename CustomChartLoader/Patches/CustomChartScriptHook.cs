@@ -9,9 +9,8 @@ public class CustomChartScriptHook : ICodePatch
     public string PatchName => "Custom chart script (hook)";
     public string TargetCodeName => "gml_GlobalScript_load_song_information";
     
-    public int? Target(List<UndertaleInstruction> instructions)
-    {
-        return instructions.FindIndex(i => i is
+    public int? Target(List<UndertaleInstruction> instructions) =>
+        instructions.FindIndex(i => i is
         {
             Kind: UndertaleInstruction.Opcode.Pop,
             Type1: UndertaleInstruction.DataType.Variable,
@@ -22,7 +21,6 @@ public class CustomChartScriptHook : ICodePatch
                 InstanceType: UndertaleInstruction.InstanceType.Local 
             }
         });
-    }
 
     public IEnumerable<UndertaleInstruction> Codegen(UndertaleData gameData, UndertaleCode targetCode)
     {

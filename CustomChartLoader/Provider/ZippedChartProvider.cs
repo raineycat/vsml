@@ -19,7 +19,7 @@ public class ZippedChartProvider(string zipFilePath) : IChartProvider, IDisposab
 
     public byte[] GetDataFile(string relativePath)
     {
-        var entry = _archive.GetEntry("chart.json");
+        var entry = _archive.GetEntry(relativePath);
         if(entry == null)
             return [];
         
