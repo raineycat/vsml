@@ -1,5 +1,7 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ManagedLoader.Patches;
@@ -15,6 +17,7 @@ public class ModLoader : IGameEnv
     internal static Logger Logger { get; private set; } = null!;
     internal  LoaderConfig Config { get; private set; } = new();
     internal IProgressTracker ProgressTracker { get; }
+    internal bool ShouldSkipPatching { get; }
     
     public string ModsFolder { get; }
     public string GameFolder { get; }
@@ -24,6 +27,7 @@ public class ModLoader : IGameEnv
 
     private UndertaleData _gameData = null!;
     private List<IModInit> _modInitializers = [];
+    private PatchState _currentState = new();
 
     private static readonly JsonSerializerOptions _jsonConfigOptions = new()
     {
@@ -83,11 +87,30 @@ public class ModLoader : IGameEnv
             }
         };
         
+        ProgressTracker.SetCurrentStep("Hashing data file");
+        // (this points to data.win NOT shadow.win because of the path switch)
+        _currentState.OriginalDataHash = HashFile(Path.Combine(GameFolder, "shadow.win"));
+        Logger.Debug("Hashed data.win: {DataHash}", _currentState.OriginalDataHash);
+        
         Logger.Debug("Starting to scan mods...");
         ProgressTracker.SetCurrentStep("Searching for mods");
         ScanMods();
         
         Logger.Information("Finished loader pre-init");
+
+        var stateFilePath = Path.Combine(GameFolder, "vsml.state");
+        if (File.Exists(stateFilePath))
+        {
+            Logger.Debug("Checking previous state file");
+            var oldState = JsonSerializer.Deserialize<PatchState>(File.ReadAllText(stateFilePath)) ?? new();
+            var matches = _currentState.OriginalDataHash == oldState.OriginalDataHash &&
+                          _currentState.ModHashes.Values.ToImmutableSortedSet()
+                              .SequenceEqual(oldState.ModHashes.Values.ToImmutableSortedSet());
+            Logger.Debug("State match: {Matches}", matches);
+            ShouldSkipPatching = matches;
+        }
+        
+        File.WriteAllText(stateFilePath, JsonSerializer.Serialize(_currentState));
     }
 
     public void RunPatching()
@@ -99,7 +122,7 @@ public class ModLoader : IGameEnv
         using (var stream = File.Open(dataFilePath, FileMode.Open, FileAccess.Read, FileShare.None))
         {
             Logger.Debug("Loading data...");
-            ProgressTracker.SetCurrentStep("Loading data fron disk");
+            ProgressTracker.SetCurrentStep("Loading data from disk");
             var sw = Stopwatch.StartNew();
             _gameData = UndertaleIO.Read(stream);
             Logger.Information("Finished loading data! Took {ElapsedTime}", sw.Elapsed);
@@ -133,6 +156,10 @@ public class ModLoader : IGameEnv
         {
             if(File.Exists(Path.ChangeExtension(dll, "exe")))
                 continue;
+
+            ProgressTracker.SetCurrentStep("Hashing: " + Path.GetFileName(dll));
+            var dllHash = HashFile(dll);
+            _currentState.ModHashes.Add(dll, dllHash);
             
             try
             {
@@ -160,6 +187,14 @@ public class ModLoader : IGameEnv
             _modInitializers.Add(mod);
             Logger.Information("Loaded mod: {Name} v{Version}", mod.ModName, mod.ModVersion);
         }
+    }
+
+    private static string HashFile(string path)
+    {
+        using var ms = File.OpenRead(path);
+        var sha = SHA256.Create();
+        var hash = sha.ComputeHash(ms);
+        return Convert.ToHexStringLower(hash);
     }
 
     private void ApplyPatches()

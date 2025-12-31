@@ -30,7 +30,7 @@ public static class NativeEntryPoint
     {
         loaderInst = new ModLoader();
 
-        if (loaderInst.Config.PatchingEnabled)
+        if (loaderInst.Config.PatchingEnabled && !loaderInst.ShouldSkipPatching)
         {
             loaderInst.RunPatching();
         }

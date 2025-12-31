@@ -17,6 +17,7 @@ public class ChartMod : IModInit
     private IProgressTracker _progressTracker = null!;
     private ILogger _logger = null!;
     private List<IChartProvider> _customCharts = [];
+    private string _chartsDir = null!;
 
     public void SetupMod(IGameEnv gameEnv, IProgressTracker progressTracker, ILogger logger)
     {
@@ -24,11 +25,11 @@ public class ChartMod : IModInit
         _progressTracker = progressTracker;
         _logger = logger;
 
-        var chartsDir = Path.Combine(gameEnv.GameFolder, "CustomCharts");
-        if (!Directory.Exists(chartsDir))
-            Directory.CreateDirectory(chartsDir);
+        _chartsDir = Path.Combine(gameEnv.GameFolder, "CustomCharts");
+        if (!Directory.Exists(_chartsDir))
+            Directory.CreateDirectory(_chartsDir);
 
-        foreach (var dir in Directory.EnumerateDirectories(chartsDir))
+        foreach (var dir in Directory.EnumerateDirectories(_chartsDir))
         {
             var infoPath = Path.Combine(dir, "chart.json");
             if (!File.Exists(infoPath))
@@ -40,46 +41,15 @@ public class ChartMod : IModInit
             _customCharts.Add(new FolderChartProvider(dir));
         }
         
-        foreach(var file in Directory.EnumerateFiles(chartsDir, "*.zip"))
+        foreach(var file in Directory.EnumerateFiles(_chartsDir, "*.zip"))
         {
             _customCharts.Add(new ZippedChartProvider(file));
         }
 
         _logger.Information("Loaded {Count} custom charts!", _customCharts.Count);
-
-        var tempDir = "_vsml_chart_temp";
-        if(Directory.Exists(tempDir))
-            Directory.Delete(tempDir, true);
-        Directory.CreateDirectory(tempDir);
         
-        var manifest = new ChartManifest
-        {
-            TempChartDir = tempDir,
-            Charts = _customCharts.Select(p => p.GetChartInfo()).WhereNotNull().ToList()
-        };
-
-        var manifestPath = Path.Combine(chartsDir, "_manifest");
-        File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest));
-        _logger.Information("Written manifest to {Path}", manifestPath);
-
-        string[] filesToExtract = ["OPENING.vsb", "MIDDLE.vsb", "FINALE.vsb", "ENCORE.vsb"];
-        foreach (var chart in _customCharts)
-        {
-            var meta = chart.GetChartInfo();
-            if(meta == null)
-                continue;
-            foreach (var file in filesToExtract)
-            {
-                var buf = chart.GetDataFile(file);
-                if (buf.Length > 0)
-                {
-                    var path = Path.Combine(tempDir, meta.Id);
-                    if (!Directory.Exists(path))
-                        Directory.CreateDirectory(path);
-                    File.WriteAllBytes(Path.Combine(path, file), buf);
-                }
-            }
-        }
+        ExtractCharts("_vsml_chart_temp");
+        _logger.Information("Extracted charts and written manifest");
     }
 
     public void ApplyPatches(IPatchApplicator applicator)
@@ -187,6 +157,42 @@ public class ChartMod : IModInit
         
         WriteAudioGroup($"audiogroup{nextAudioGroupId}.dat", groupSounds);
         _logger.Information("Finished custom chart patching");
+    }
+
+    private void ExtractCharts(string tempDir)
+    {
+        if(Directory.Exists(tempDir))
+            Directory.Delete(tempDir, true);
+        Directory.CreateDirectory(tempDir);
+        
+        var manifest = new ChartManifest
+        {
+            TempChartDir = tempDir,
+            Charts = _customCharts.Select(p => p.GetChartInfo()).WhereNotNull().ToList()
+        };
+
+        var manifestPath = Path.Combine(_chartsDir, "_manifest");
+        File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest));
+        _logger.Debug("Manifest path: {Path}", manifestPath);
+
+        string[] filesToExtract = ["OPENING.vsb", "MIDDLE.vsb", "FINALE.vsb", "ENCORE.vsb"];
+        foreach (var chart in _customCharts)
+        {
+            var meta = chart.GetChartInfo();
+            if(meta == null)
+                continue;
+            foreach (var file in filesToExtract)
+            {
+                var buf = chart.GetDataFile(file);
+                if (buf.Length > 0)
+                {
+                    var path = Path.Combine(tempDir, meta.Id);
+                    if (!Directory.Exists(path))
+                        Directory.CreateDirectory(path);
+                    File.WriteAllBytes(Path.Combine(path, file), buf);
+                }
+            }
+        }
     }
 
     private void WriteAudioGroup(string filename, List<UndertaleEmbeddedAudio> sounds)
