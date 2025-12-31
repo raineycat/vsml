@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using K4os.Hash.xxHash;
 using ManagedLoader.Patches;
 using ModContract;
 using Serilog;
@@ -191,10 +192,22 @@ public class ModLoader : IGameEnv
 
     private static string HashFile(string path)
     {
-        using var ms = File.OpenRead(path);
-        var sha = SHA256.Create();
-        var hash = sha.ComputeHash(ms);
-        return Convert.ToHexStringLower(hash);
+        const int bufferSize = 1024 * 1024;
+        using var stream = new FileStream(path, 
+            FileMode.Open, 
+            FileAccess.Read, 
+            FileShare.Read, 
+            bufferSize, 
+            FileOptions.SequentialScan);
+        
+        var hash = new XXH64();
+        var buffer = new byte[bufferSize];
+        int bytesRead;
+
+        while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+            hash.Update(buffer.AsSpan(0, bytesRead));
+
+        return Convert.ToHexStringLower(hash.DigestBytes());
     }
 
     private void ApplyPatches()
