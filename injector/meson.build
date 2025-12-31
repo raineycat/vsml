@@ -5,6 +5,10 @@ project(
     default_options: ['cpp_std=c++20', 'default_library=static'],
 )
 
+if not (host_machine.system() == 'windows' and host_machine.cpu_family() == 'x86_64')
+    error('This can only build on x64 windows!')
+endif
+
 pymod = import('python')
 py3 = pymod.find_installation('python3')
 
