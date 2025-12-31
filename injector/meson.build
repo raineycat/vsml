@@ -21,16 +21,8 @@ generated_proxy_def = proxy_gen[1]
 cpp = meson.get_compiler('cpp')
 root_dir = meson.current_source_dir()
 
-dotnet_host_dep = declare_dependency(
-    include_directories: include_directories('dotnet'),
-    dependencies: cpp.find_library(
-        'libnethost',
-        dirs: join_paths(root_dir, 'dotnet'),
-        required: true,
-    ),
-)
-
 minhook_dep = dependency('minhook')
+nethost_dep = dependency('nethost')
 
 windows = import('windows')
 dll_info = windows.compile_resources('dll_info.rc')
@@ -49,6 +41,6 @@ dll_source = [
 proxy_dll = shared_library(
     'version',
     dll_source,
-    dependencies: [dotnet_host_dep, minhook_dep],
+    dependencies: [nethost_dep, minhook_dep],
     link_args: ['/DEF:' + generated_proxy_def.full_path()],
 )
