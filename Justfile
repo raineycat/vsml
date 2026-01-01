@@ -62,7 +62,7 @@ build-injector:
 
 [working-directory: 'injector']
 clean-injector:
-    rm -rf buildDir
+    rm -rf {{meson_build_dir}}
 
 build-loader:
     dotnet build -c:{{build_cfg}}
