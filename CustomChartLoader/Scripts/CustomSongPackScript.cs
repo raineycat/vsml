@@ -8,6 +8,10 @@ public class CustomSongPackScript : IAdditionalScript
 
     public string SourceCode => """
                                  function VSMLSongPackHook() {
+                                    if(array_length(global.vsml_songs) < 1) {
+                                        return;
+                                    }
+                                 
                                      modded_song_ids = [];
                                      
                                      for(var i = 0; i < array_length(global.vsml_songs); i++) {

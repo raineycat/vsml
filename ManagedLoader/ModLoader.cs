@@ -98,6 +98,19 @@ public class ModLoader : IGameEnv
         ScanMods();
         
         Logger.Information("Finished loader pre-init");
+        
+        Logger.Debug("Registering mod dependency files");
+        foreach (var file in _modInitializers.SelectMany(m => m.RegisterDependentFiles()))
+        {
+            if (!File.Exists(file))
+            {
+                Logger.Warning("Dependency file {Path} doesnt exist!", file);
+                continue;
+            }
+
+            var hash = HashFile(file);
+            _currentState.DependentFileHashes.Add(file, hash);
+        }
 
         var stateFilePath = Path.Combine(GameFolder, "vsml.state");
         if (File.Exists(stateFilePath))
@@ -105,8 +118,8 @@ public class ModLoader : IGameEnv
             Logger.Debug("Checking previous state file");
             var oldState = JsonSerializer.Deserialize<PatchState>(File.ReadAllText(stateFilePath)) ?? new();
             var matches = _currentState.OriginalDataHash == oldState.OriginalDataHash &&
-                          _currentState.ModHashes.Values.ToImmutableSortedSet()
-                              .SequenceEqual(oldState.ModHashes.Values.ToImmutableSortedSet());
+                          _currentState.DependentFileHashes.Values.ToImmutableSortedSet()
+                              .SequenceEqual(oldState.DependentFileHashes.Values.ToImmutableSortedSet());
             Logger.Debug("State match: {Matches}", matches);
             ShouldSkipPatching = matches;
         }
@@ -160,7 +173,7 @@ public class ModLoader : IGameEnv
 
             ProgressTracker.SetCurrentStep("Hashing: " + Path.GetFileName(dll));
             var dllHash = HashFile(dll);
-            _currentState.ModHashes.Add(dll, dllHash);
+            _currentState.DependentFileHashes.Add(dll, dllHash);
             
             try
             {

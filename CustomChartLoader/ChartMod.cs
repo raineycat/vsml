@@ -52,6 +52,31 @@ public class ChartMod : IModInit
         _logger.Information("Extracted charts and written manifest");
     }
 
+    public IEnumerable<string> RegisterDependentFiles()
+    {
+        foreach (var provider in _customCharts)
+        {
+            switch (provider)
+            {
+                case ZippedChartProvider zip:
+                    yield return zip.ZipFilePath;
+                    break;
+                case FolderChartProvider folder:
+                {
+                    yield return Path.Combine(folder.ChartDir, "chart.json");
+
+                    var info = folder.GetChartInfo();
+                    if(info == null)
+                        continue;
+
+                    yield return Path.Combine(folder.ChartDir, info.JacketFileName);
+                    yield return Path.Combine(folder.ChartDir, info.SongFileName);
+                    break;
+                }
+            }
+        }
+    }
+
     public void ApplyPatches(IPatchApplicator applicator)
     {
         applicator.ApplyScript(new CustomChartScript());

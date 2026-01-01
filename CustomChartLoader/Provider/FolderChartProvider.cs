@@ -4,6 +4,8 @@ namespace CustomChartLoader;
 
 public class FolderChartProvider(string chartDir) : IChartProvider
 {
+    public string ChartDir => chartDir;
+    
     public CustomChartInfo? GetChartInfo()
     {
         var path = Path.Combine(chartDir, "chart.json");

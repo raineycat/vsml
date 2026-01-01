@@ -8,5 +8,6 @@ public interface IModInit
     public string ModVersion { get; }
     
     void SetupMod(IGameEnv gameEnv, IProgressTracker progressTracker, ILogger logger);
+    IEnumerable<string> RegisterDependentFiles();
     void ApplyPatches(IPatchApplicator applicator);
 }

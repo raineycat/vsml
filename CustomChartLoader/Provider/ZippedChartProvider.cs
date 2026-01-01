@@ -5,6 +5,7 @@ namespace CustomChartLoader;
 
 public class ZippedChartProvider(string zipFilePath) : IChartProvider, IDisposable
 {
+    public string ZipFilePath => zipFilePath;
     private ZipArchive _archive = ZipFile.OpenRead(zipFilePath);
 
     public CustomChartInfo? GetChartInfo()

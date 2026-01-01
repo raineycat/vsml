@@ -3,5 +3,5 @@
 public class PatchState
 {
     public string OriginalDataHash { get; set; } = "";
-    public Dictionary<string, string> ModHashes { get; set; } = [];
+    public Dictionary<string, string> DependentFileHashes { get; set; } = [];
 }
