@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="VSML" Width="500" Height="200"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize" 
+        ResizeMode="NoResize" WindowStyle="None"
         Topmost="True"
         d:DataContext="{d:DesignInstance lw:MainWindow}">
     <Window.Background>
