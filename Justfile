@@ -1,20 +1,32 @@
 build_cfg := "Debug"
-meson_build_dir := ".buildDir"
 dist_dir := "vsml-dist"
 
 git_branch := shell("git rev-parse --abbrev-ref HEAD")
 git_commit := shell("git rev-parse --short HEAD")
 
-injector_bin := "injector" / meson_build_dir
+cargo_args := if build_cfg == "Release" { "--release" } else { "" }
+injector_bin := if os() == "linux" { "Injector" / "target" / "x86_64-pc-windows-msvc" / "release" } else { "Injector" / "target" / "release" }
+
+dotnet_args := if os() == "linux" { "-p:EnableWindowsTargeting=true" } else { "" }
 loader_bin := "ManagedLoader" / "bin" / build_cfg / "net9.0"
-loadscreen_bin := "LoadingWindow" / "bin" / build_cfg / "net9.0-windows"
+loadscreen_bin := "LoadingWindow" / "bin" / build_cfg / "net9.0-windows" / "win-x64"
 chart_mod_bin := "CustomChartLoader" / "bin" / build_cfg / "net9.0"
 
 default:
     @echo "[ VSML - {{git_branch}}/{{git_commit}} ]"
     @just --list
 
-package: build-all
+[windows]
+make-zip: make-dist
+    tar -a -cf vsml.zip {{dist_dir}}
+    rm -rf {{dist_dir}}
+
+[linux]
+make-zip: make-dist
+    zip -r vsml {{dist_dir}}
+    rm -rf {{dist_dir}}
+
+make-dist: build-all
     # clean the dir if it exists
     rm -rf {{dist_dir}}
 
@@ -44,28 +56,27 @@ package: build-all
     cp {{loadscreen_bin}}/LoadingWindow.runtimeconfig.json {{dist_dir}}/Mods/
 
     # copy chart mod
-    cp {{chart_mod_bin}}/CustomChartLoader.dll {{dist_dir}}/Mods/
-
-    # make zip file
-    tar -a -cf vsml.zip {{dist_dir}}
-
-    # clean staging dir
-    rm -rf {{dist_dir}}
+    cp {{chart_mod_bin}}/CustomChartLoader.dll {{dist_dir}}/Mods/    
 
 build-all: build-injector build-loader
 clean-all: clean-injector clean-loader
 
-[working-directory: 'injector']
+[working-directory: 'Injector']
+[windows]
 build-injector:
-    meson setup {{meson_build_dir}} --buildtype={{lowercase(build_cfg)}}
-    meson compile -C {{meson_build_dir}}
+    cargo build {{cargo_args}}
 
-[working-directory: 'injector']
+[working-directory: 'Injector']
+[linux]
+build-injector:
+    cargo build-cross {{cargo_args}}
+
+[working-directory: 'Injector']
 clean-injector:
-    rm -rf {{meson_build_dir}}
+    cargo clean
 
 build-loader:
-    dotnet build -c:{{build_cfg}}
+    dotnet build -c:{{build_cfg}} {{dotnet_args}}
 
 clean-loader:
     rm -rf */bin

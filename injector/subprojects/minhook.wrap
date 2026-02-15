@@ -1,8 +1,0 @@
-[wrap-git]
-url = https://github.com/TsudaKageyu/minhook.git
-revision = v1.3.4
-depth = 1
-method = cmake
-
-[provide]
-minhook = minhook_dep

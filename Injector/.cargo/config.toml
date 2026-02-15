@@ -1,0 +1,5 @@
+[alias]
+build-cross = "xwin build --target x86_64-pc-windows-msvc --features res_force_utf8"
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]

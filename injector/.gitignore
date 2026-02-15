@@ -1,6 +1,0 @@
-.idea/
-.vs/
-
-subprojects/*
-!subprojects/*.wrap
-!subprojects/packagefiles

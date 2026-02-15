@@ -1,0 +1,50 @@
+[package]
+name = "injector"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+
+[lib]
+name = "version"
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = "z"  # optimise for binary size
+lto = true
+
+[features]
+res_force_utf8 = ["windows_exe_info/versioninfo_force_utf8"]
+
+[build-dependencies]
+windows_exe_info = "0.5"
+
+[dependencies]
+ftail = "0.3.1"
+log = "0.4.29"
+libloading = "0.9.0"
+lazy_static = "1.5.0"
+anyhow = "1.0.101"
+
+# we need the alpha version because the last stable one
+# depends on udis86-sys, which doesn't compile using clang-cl
+# as far as I can tell
+retour = "=0.4.0-alpha.4"
+libc = "0.2.181"
+
+[dependencies.netcorehost]
+version = "0.20.0"
+default-features = false
+features = [
+  "net9_0",
+  "nethost-download",
+  "utils"
+]
+
+[dependencies.windows]
+version = ">=0.59, <=0.62"
+features = [
+  # GetSystemDirectoryA
+  "Win32_System_SystemInformation",
+  # DLL_PROCESS_ATTACH
+  "Win32_System_SystemServices"
+]
