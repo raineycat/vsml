@@ -228,7 +228,7 @@ public class ModLoader : IGameEnv
         var patcher = new PatchApplicator(_gameData);
         
         patcher.ApplyPatch(new DebugFunctionPatchOld());
-        patcher.ApplyPatch(new AppendToVersionPatch(" (VSML 0.1.1)"));
+        patcher.ApplyPatch(new AppendToVersionPatch(" (VSML 0.1.2)"));
 
         if (Config.EnableGameConsole)
         {

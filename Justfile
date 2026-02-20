@@ -11,6 +11,7 @@ dotnet_args := if os() == "linux" { "-p:EnableWindowsTargeting=true" } else { ""
 loader_bin := "ManagedLoader" / "bin" / build_cfg / "net9.0"
 loadscreen_bin := "LoadingWindow" / "bin" / build_cfg / "net9.0-windows" / "win-x64"
 chart_mod_bin := "CustomChartLoader" / "bin" / build_cfg / "net9.0"
+debug_mod_bin := "DebuggingMod" / "bin" / build_cfg / "net9.0"
 
 default:
     @echo "[ VSML - {{git_branch}}/{{git_commit}} ]"
@@ -34,6 +35,7 @@ make-dist: build-all
     mkdir {{dist_dir}}
     mkdir {{dist_dir}}/Mods
     mkdir {{dist_dir}}/CustomCharts
+    mkdir {{dist_dir}}/DebugScripts
 
     # write version file
     echo "{{git_branch}}/{{git_commit}}" > {{dist_dir}}/vsml.ver
@@ -51,12 +53,14 @@ make-dist: build-all
     cp {{loader_bin}}/K4os.Hash.xxHash.dll {{dist_dir}}/Mods/
 
     # copy loading screen app
-    cp {{loadscreen_bin}}/LoadingWindow.exe {{dist_dir}}/Mods/
-    cp {{loadscreen_bin}}/LoadingWindow.dll {{dist_dir}}/Mods/
-    cp {{loadscreen_bin}}/LoadingWindow.runtimeconfig.json {{dist_dir}}/Mods/
+    cp {{loadscreen_bin}}/LoadingWindow.{exe,dll,runtimeconfig.json} {{dist_dir}}/Mods/
 
-    # copy chart mod
+    # copy built in mods
     cp {{chart_mod_bin}}/CustomChartLoader.dll {{dist_dir}}/Mods/    
+    cp {{debug_mod_bin}}/DebuggingMod.dll {{dist_dir}}/Mods/  
+    
+    # copy other assets
+    cp ModifierCommands.gml {{dist_dir}}/DebugScripts/  
 
 build-all: build-injector build-loader
 clean-all: clean-injector clean-loader

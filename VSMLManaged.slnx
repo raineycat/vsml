@@ -1,8 +1,21 @@
 <Solution>
-  <Project Path="CustomChartLoader\CustomChartLoader.csproj" Type="Classic C#" />
-  <Project Path="LoadingWindow\LoadingWindow.csproj" Type="Classic C#" />
+  <Folder Name="/Additional items/">
+    <File Path="Justfile" />
+    <File Path="ModifierCommands.gml" />
+    <File Path="README.md" />
+  </Folder>
+  
+  <Folder Name="/Built-in mods/">
+    <Project Path="CustomChartLoader/CustomChartLoader.csproj" />
+    <Project Path="DebuggingMod/DebuggingMod.csproj" />
+  </Folder>
+  
+  <Folder Name="/Dependencies/">
+    <Project Path="UndertaleModTool/UndertaleModLib/UndertaleModLib.csproj" />
+    <Project Path="UndertaleModTool/Underanalyzer/Underanalyzer/Underanalyzer.csproj" />
+  </Folder>
+  
   <Project Path="ManagedLoader/ManagedLoader.csproj" />
-  <Project Path="ModContract\ModContract.csproj" />
-  <Project Path="UndertaleModTool\Underanalyzer\Underanalyzer\Underanalyzer.csproj" Type="Classic C#" />
-  <Project Path="UndertaleModTool\UndertaleModLib\UndertaleModLib.csproj" Type="Classic C#" />
+  <Project Path="ModContract/ModContract.csproj" />
+  <Project Path="LoadingWindow/LoadingWindow.csproj" />
 </Solution>
