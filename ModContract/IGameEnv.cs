@@ -3,5 +3,5 @@
 public interface IGameEnv
 {
     public string GameFolder { get; }
-    public string ModsFolder { get; }
+    public string LoaderDataFolder { get; }
 }

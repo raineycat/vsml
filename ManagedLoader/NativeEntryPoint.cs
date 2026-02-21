@@ -16,7 +16,11 @@ public static class NativeEntryPoint
         }
         catch (Exception e)
         {
-            File.WriteAllText("VSML Exception.txt", e.ToString());
+            var exceptionPath = Path.Combine("VSML", "Logs");
+            if (!Directory.Exists(exceptionPath))
+                Directory.CreateDirectory(exceptionPath);
+            
+            File.WriteAllText(Path.Combine(exceptionPath, "exception.txt"), e.ToString());
             return 1;
         } 
         finally

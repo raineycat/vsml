@@ -5,8 +5,8 @@ use log::LevelFilter;
 use netcorehost::bindings::hostfxr::{hostfxr_delegate_type, load_assembly_fn};
 use netcorehost::error::HostingResult;
 use netcorehost::hostfxr::{HostfxrContext, InitializedForRuntimeConfig};
+use netcorehost::nethost;
 use netcorehost::pdcstring::PdCStr;
-use netcorehost::{nethost, pdcstr};
 use retour::GenericDetour;
 use std::cell::OnceCell;
 use std::ffi::c_void;
@@ -33,26 +33,34 @@ pub extern "system" fn DllMain(
     reason_for_call: u32,
     _reserved: *const c_void,
 ) -> i32 {
-    match reason_for_call {
+    let success = match reason_for_call {
         DLL_PROCESS_ATTACH => init_dll(),
         DLL_PROCESS_DETACH => cleanup_dll(),
         _ => Ok(()),
     }
     .inspect_err(|e| log::error!("DLL handler error: {:?}", e))
-    .unwrap();
+    .is_ok();
 
-    1
+    if success { 1 } else { 0 }
 }
 
 fn init_dll() -> anyhow::Result<()> {
-    let log_file = PathBuf::from("injector.log");
+    let log_file = PathBuf::from(env!("VSML_LOG_FILE"));
+    let log_dir = log_file
+        .parent()
+        .ok_or(anyhow::format_err!("Failed to get log file parent"))?;
+    if !std::fs::exists(log_dir)? {
+        std::fs::create_dir_all(log_dir)?;
+    }
+
     let log_level = if cfg!(debug_assertions) {
         LevelFilter::Debug
     } else {
         LevelFilter::Warn
     };
+
     Ftail::new()
-        .single_file(&log_file, false, log_level)
+        .single_file(&log_file, true, log_level)
         .init()?;
 
     log::info!("DLL init!");
@@ -141,7 +149,10 @@ extern "system" fn create_file_w_hook(
             "data.win" => {
                 match try_init_dotnet() {
                     Ok(_) => log::info!("Finished .NET init"),
-                    Err(e) => log::error!(".NET init failed! {:#?}", e),
+                    Err(e) => {
+                        log::error!(".NET init failed! {:#?}", e);
+                        std::process::exit(1)
+                    }
                 };
 
                 log::info!("Swizzling data.win access");
@@ -198,10 +209,10 @@ fn try_init_dotnet() -> anyhow::Result<()> {
     let hostfxr = nethost::load_hostfxr()?;
     log::debug!("Found runtime: {:?}", hostfxr.get_dotnet_exe());
 
-    let managed_dir = env::current_dir()?.join("Mods");
+    let managed_dir = env::current_dir()?;
 
     let config_path: Vec<u16> = managed_dir
-        .join("ManagedLoader.runtimeconfig.json")
+        .join(env!("VSML_RUNTIMECONFIG"))
         .to_str()
         .ok_or(anyhow::format_err!("Failed to convert config_path"))?
         .encode_utf16()
@@ -219,7 +230,7 @@ fn try_init_dotnet() -> anyhow::Result<()> {
 
     // we have to do it this way so it's not stuck in an isolated load context
     let dll_path: Vec<u16> = managed_dir
-        .join("ManagedLoader.dll")
+        .join(env!("VSML_MANAGED_DLL"))
         .to_str()
         .ok_or(anyhow::format_err!("Failed to convert config_path"))?
         .encode_utf16()
@@ -231,11 +242,22 @@ fn try_init_dotnet() -> anyhow::Result<()> {
     .0?;
     log::debug!("Loaded assembly from disk");
 
+    let entrypoint_type: Vec<u16> = env!("VSML_ENTRYPOINT_TYPE")
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+    let entrypoint_method: Vec<u16> = env!("VSML_ENTRYPOINT_METHOD")
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+
     type ManagedEntryPoint = fn(*const c_void, i32) -> i32;
-    let entry_point = loader.get_function_with_unmanaged_callers_only::<ManagedEntryPoint>(
-        pdcstr!("ManagedLoader.NativeEntryPoint, ManagedLoader"),
-        pdcstr!("LoaderMain"),
-    )?;
+    let entry_point = unsafe {
+        loader.get_function_with_unmanaged_callers_only::<ManagedEntryPoint>(
+            PdCStr::from_slice_with_nul_unchecked(&entrypoint_type),
+            PdCStr::from_slice_with_nul_unchecked(&entrypoint_method),
+        )
+    }?;
 
     log::info!("Finished loading managed code");
 

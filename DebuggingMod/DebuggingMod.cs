@@ -15,7 +15,7 @@ public class DebuggingMod : IModInit
     {
         _logger = logger;
 
-        var scriptDir = Path.Combine(gameEnv.GameFolder, "DebugScripts");
+        var scriptDir = Path.Combine(gameEnv.LoaderDataFolder, "DebugScripts");
         if (!Directory.Exists(scriptDir))
             Directory.CreateDirectory(scriptDir);
 

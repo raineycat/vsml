@@ -1,10 +1,8 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using K4os.Hash.xxHash;
 using ManagedLoader.Patches;
 using ModContract;
 using Serilog;
@@ -16,15 +14,12 @@ namespace ManagedLoader;
 public class ModLoader : IGameEnv
 {
     internal static Logger Logger { get; private set; } = null!;
-    internal  LoaderConfig Config { get; private set; } = new();
+    internal LoaderConfig Config { get; } = new();
     internal IProgressTracker ProgressTracker { get; }
     internal bool ShouldSkipPatching { get; }
     
-    public string ModsFolder { get; }
     public string GameFolder { get; }
-
-    private const string _logFilePath = "vsml.log";
-    private const string _configFilePath = "vsml.json";
+    public string LoaderDataFolder { get; }
 
     private UndertaleData _gameData = null!;
     private List<IModInit> _modInitializers = [];
@@ -41,56 +36,52 @@ public class ModLoader : IGameEnv
     {
         ProgressTracker = new DummyProgressTracker();
         
-        if (File.Exists(_configFilePath))
+        var gamePath = Process.GetCurrentProcess().MainModule?.FileName
+                       ?? throw new ApplicationException("Failed to get the game path");
+        GameFolder = Path.GetDirectoryName(gamePath)
+                     ?? throw new ApplicationException("Failed to get the game folder");
+        LoaderDataFolder = Path.Combine(GameFolder, "VSML");
+        
+        Utils.AddToLoadPath(Path.Combine(LoaderDataFolder, "Core"));
+        Utils.AddToLoadPath(Path.Combine(LoaderDataFolder, "Mods"));
+
+        var configFilePath = Path.Combine(LoaderDataFolder, "config.json");
+        var logFilePath = Path.Combine(LoaderDataFolder, "Logs", "managed.log");
+        
+        if (File.Exists(configFilePath))
         {
-            Config = JsonSerializer.Deserialize<LoaderConfig>(File.ReadAllText(_configFilePath), _jsonConfigOptions) 
+            Config = JsonSerializer.Deserialize<LoaderConfig>(File.ReadAllText(configFilePath), _jsonConfigOptions) 
                      ?? new LoaderConfig();
         }
         else
         {
-            File.WriteAllText(_configFilePath, JsonSerializer.Serialize(Config, _jsonConfigOptions));
+            File.WriteAllText(configFilePath, JsonSerializer.Serialize(Config, _jsonConfigOptions));
         }
         
-        if (File.Exists(_logFilePath)) 
-            File.Move(_logFilePath, _logFilePath + ".old", true);
+        if (File.Exists(logFilePath)) 
+            File.Move(logFilePath, logFilePath + ".old", true);
         
         Logger = new LoggerConfiguration()
             .MinimumLevel.Is(Config.LogLevel)
-            .WriteTo.File(_logFilePath)
+            .WriteTo.File(logFilePath)
             .CreateLogger();
         
-        ModsFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? 
-                     throw new Exception("Failed to locate mods folder");
-        GameFolder = Path.GetDirectoryName(ModsFolder) ??
-                  throw new Exception("Failed to locate game folder");
-        
+        Logger.Information("Starting loader!");
         Logger.Debug("Found game dir: {GameDir}", GameFolder);
-        Logger.Debug("Found mods dir: {ModsDir}", ModsFolder);
+        Logger.Debug("Found loader dir: {ModsDir}", LoaderDataFolder);
         
         if (Config.EnableLoadingScreen)
         {
+            var loadingWindowPath = Path.Combine(LoaderDataFolder, "Core", "LoadingWindow.exe");
             const string pipeName = "VSMLProgressTracker";
-            var proc = Process.Start(Path.Combine(ModsFolder, "LoadingWindow.exe"), [pipeName]);
+            var proc = Process.Start(loadingWindowPath, [pipeName]);
             Logger.Debug("Started loading window process: {Proc}", proc);
             ProgressTracker = new NamedPipeProgressTracker(pipeName);
         }
-
-        AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
-        {
-            try
-            {
-                var name = new AssemblyName(args.Name);
-                return Assembly.LoadFrom(Path.Combine(ModsFolder, name.Name + ".dll"));
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-        };
         
         ProgressTracker.SetCurrentStep("Hashing data file");
         // (this points to data.win NOT shadow.win because of the path switch)
-        _currentState.OriginalDataHash = HashFile(Path.Combine(GameFolder, "shadow.win"));
+        _currentState.OriginalDataHash = Utils.HashFileFast(Path.Combine(GameFolder, "shadow.win"));
         Logger.Debug("Hashed data.win: {DataHash}", _currentState.OriginalDataHash);
         
         Logger.Debug("Starting to scan mods...");
@@ -105,14 +96,16 @@ public class ModLoader : IGameEnv
             if (!File.Exists(file))
             {
                 Logger.Warning("Dependency file {Path} doesnt exist!", file);
+                // have to add it here to still force a repatch
+                _currentState.DependentFileHashes.Add(file, "");
                 continue;
             }
 
-            var hash = HashFile(file);
+            var hash = Utils.HashFileFast(file);
             _currentState.DependentFileHashes.Add(file, hash);
         }
 
-        var stateFilePath = Path.Combine(GameFolder, "vsml.state");
+        var stateFilePath = Path.Combine(LoaderDataFolder, "state.json");
         if (File.Exists(stateFilePath))
         {
             Logger.Debug("Checking previous state file");
@@ -166,13 +159,14 @@ public class ModLoader : IGameEnv
 
     private void ScanMods()
     {
-        foreach (var dll in Directory.EnumerateFiles(ModsFolder, "*.dll", SearchOption.AllDirectories))
+        var modsDir = Path.Combine(LoaderDataFolder, "Mods");
+        foreach (var dll in Directory.EnumerateFiles(modsDir, "*.dll", SearchOption.AllDirectories))
         {
             if(File.Exists(Path.ChangeExtension(dll, "exe")))
                 continue;
 
             ProgressTracker.SetCurrentStep("Hashing: " + Path.GetFileName(dll));
-            var dllHash = HashFile(dll);
+            var dllHash = Utils.HashFileFast(dll);
             _currentState.DependentFileHashes.Add(dll, dllHash);
             
             try
@@ -201,26 +195,6 @@ public class ModLoader : IGameEnv
             _modInitializers.Add(mod);
             Logger.Information("Loaded mod: {Name} v{Version}", mod.ModName, mod.ModVersion);
         }
-    }
-
-    private static string HashFile(string path)
-    {
-        const int bufferSize = 1024 * 1024;
-        using var stream = new FileStream(path, 
-            FileMode.Open, 
-            FileAccess.Read, 
-            FileShare.Read, 
-            bufferSize, 
-            FileOptions.SequentialScan);
-        
-        var hash = new XXH64();
-        var buffer = new byte[bufferSize];
-        int bytesRead;
-
-        while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
-            hash.Update(buffer.AsSpan(0, bytesRead));
-
-        return Convert.ToHexStringLower(hash.DigestBytes());
     }
 
     private void ApplyPatches()

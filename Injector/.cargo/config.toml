@@ -3,3 +3,11 @@ build-cross = "xwin build --target x86_64-pc-windows-msvc --features res_force_u
 
 [target.x86_64-pc-windows-msvc]
 rustflags = ["-C", "target-feature=+crt-static"]
+
+[env]
+VSML_LOG_FILE = "VSML/Logs/injector.log"
+VSML_RUNTIMECONFIG = "VSML/Core/ManagedLoader.runtimeconfig.json"
+VSML_MANAGED_DLL = "VSML/Core/ManagedLoader.dll"
+
+VSML_ENTRYPOINT_TYPE = "ManagedLoader.NativeEntryPoint, ManagedLoader"
+VSML_ENTRYPOINT_METHOD = "LoaderMain"

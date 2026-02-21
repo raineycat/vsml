@@ -5,7 +5,7 @@ git_branch := shell("git rev-parse --abbrev-ref HEAD")
 git_commit := shell("git rev-parse --short HEAD")
 
 cargo_args := if build_cfg == "Release" { "--release" } else { "" }
-injector_bin := if os() == "linux" { "Injector" / "target" / "x86_64-pc-windows-msvc" / "release" } else { "Injector" / "target" / "release" }
+injector_bin := if os() == "linux" { "Injector" / "target" / "x86_64-pc-windows-msvc" } else { "Injector" / "target" }
 
 dotnet_args := if os() == "linux" { "-p:EnableWindowsTargeting=true" } else { "" }
 loader_bin := "ManagedLoader" / "bin" / build_cfg / "net9.0"
@@ -33,37 +33,40 @@ make-dist: build-all
 
     # set up directory structure
     mkdir {{dist_dir}}
-    mkdir {{dist_dir}}/Mods
-    mkdir {{dist_dir}}/CustomCharts
-    mkdir {{dist_dir}}/DebugScripts
+    mkdir {{dist_dir}}/VSML
+    mkdir {{dist_dir}}/VSML/Core
+    mkdir {{dist_dir}}/VSML/Logs
+    mkdir {{dist_dir}}/VSML/Mods
+    mkdir {{dist_dir}}/VSML/CustomCharts
+    mkdir {{dist_dir}}/VSML/DebugScripts
 
     # write version file
-    echo "{{git_branch}}/{{git_commit}}" > {{dist_dir}}/vsml.ver
+    echo "{{git_branch}}/{{git_commit}}" > {{dist_dir}}/VSML/version.txt
 
     # copy injector
-    cp {{injector_bin}}/version.dll {{dist_dir}}/
+    cp {{injector_bin}}/{{lowercase(build_cfg)}}/version.dll {{dist_dir}}/
 
     # copy loader and dependencies
-    cp {{loader_bin}}/ManagedLoader.{dll,runtimeconfig.json} {{dist_dir}}/Mods/
-    cp {{loader_bin}}/ModContract.dll {{dist_dir}}/Mods/
-    cp {{loader_bin}}/Serilog.dll {{dist_dir}}/Mods/
-    cp {{loader_bin}}/Serilog.Sinks.File.dll {{dist_dir}}/Mods/
-    cp {{loader_bin}}/UndertaleModLib.dll {{dist_dir}}/Mods/
-    cp {{loader_bin}}/Underanalyzer.dll {{dist_dir}}/Mods/
-    cp {{loader_bin}}/K4os.Hash.xxHash.dll {{dist_dir}}/Mods/
+    cp {{loader_bin}}/ManagedLoader.{dll,runtimeconfig.json} {{dist_dir}}/VSML/Core/
+    cp {{loader_bin}}/ModContract.dll {{dist_dir}}/VSML/Core/
+    cp {{loader_bin}}/Serilog.dll {{dist_dir}}/VSML/Core/
+    cp {{loader_bin}}/Serilog.Sinks.File.dll {{dist_dir}}/VSML/Core/
+    cp {{loader_bin}}/UndertaleModLib.dll {{dist_dir}}/VSML/Core/
+    cp {{loader_bin}}/Underanalyzer.dll {{dist_dir}}/VSML/Core/
+    cp {{loader_bin}}/K4os.Hash.xxHash.dll {{dist_dir}}/VSML/Core/
 
     # copy loading screen app
-    cp {{loadscreen_bin}}/LoadingWindow.{exe,dll,runtimeconfig.json} {{dist_dir}}/Mods/
+    cp {{loadscreen_bin}}/LoadingWindow.{exe,dll,runtimeconfig.json} {{dist_dir}}/VSML/Core/
 
     # copy built in mods
-    cp {{chart_mod_bin}}/CustomChartLoader.dll {{dist_dir}}/Mods/    
-    cp {{debug_mod_bin}}/DebuggingMod.dll {{dist_dir}}/Mods/  
+    cp {{chart_mod_bin}}/CustomChartLoader.dll {{dist_dir}}/VSML/Mods/    
+    cp {{debug_mod_bin}}/DebuggingMod.dll {{dist_dir}}/VSML/Mods/  
     
     # copy other assets
-    cp ModifierCommands.gml {{dist_dir}}/DebugScripts/  
+    cp ModifierCommands.gml {{dist_dir}}/VSML/DebugScripts/  
 
-build-all: build-injector build-loader
-clean-all: clean-injector clean-loader
+build-all: build-injector build-loader build-installer
+clean-all: clean-injector clean-loader clean-installer
 
 [working-directory: 'Injector']
 [windows]
@@ -85,3 +88,11 @@ build-loader:
 clean-loader:
     rm -rf */bin
     rm -rf */obj
+
+[working-directory: 'Installer']
+build-installer:
+    cargo build {{cargo_args}}
+
+[working-directory: 'Installer']
+clean-installer:
+    cargo clean

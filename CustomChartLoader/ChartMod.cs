@@ -25,7 +25,7 @@ public class ChartMod : IModInit
         _progressTracker = progressTracker;
         _logger = logger;
 
-        _chartsDir = Path.Combine(gameEnv.GameFolder, "CustomCharts");
+        _chartsDir = Path.Combine(gameEnv.LoaderDataFolder, "CustomCharts");
         if (!Directory.Exists(_chartsDir))
             Directory.CreateDirectory(_chartsDir);
 
@@ -48,7 +48,7 @@ public class ChartMod : IModInit
 
         _logger.Information("Loaded {Count} custom charts!", _customCharts.Count);
         
-        ExtractCharts("_vsml_chart_temp");
+        ExtractCharts(Path.Combine(gameEnv.LoaderDataFolder, ".chart_temp"));
         _logger.Information("Extracted charts and written manifest");
     }
 
@@ -79,7 +79,7 @@ public class ChartMod : IModInit
 
     public void ApplyPatches(IPatchApplicator applicator)
     {
-        applicator.ApplyScript(new CustomChartScript());
+        applicator.ApplyScript(new CustomChartScript(Path.Combine(_chartsDir, "_manifest")));
         applicator.ApplyPatch(new CustomChartScriptHook());
         
         applicator.ApplyScript(new CustomSongPackScript());
