@@ -5,7 +5,6 @@ namespace CustomChartLoader;
 
 public class ZippedChartProvider(string zipFilePath) : IChartProvider, IDisposable
 {
-    public string ZipFilePath => zipFilePath;
     private ZipArchive _archive = ZipFile.OpenRead(zipFilePath);
 
     public CustomChartInfo? GetChartInfo()
@@ -28,6 +27,16 @@ public class ZippedChartProvider(string zipFilePath) : IChartProvider, IDisposab
         using var ms = new MemoryStream();
         zs.CopyTo(ms);
         return ms.GetBuffer();
+    }
+
+    public IEnumerable<string> RegisterDependentFiles()
+    {
+        yield return zipFilePath;
+    }
+
+    public bool TrySymlinkDataFile(string relativePath, string linkPath)
+    {
+        return false;
     }
 
     public void Dispose()

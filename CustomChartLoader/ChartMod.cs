@@ -47,34 +47,15 @@ public class ChartMod : IModInit
         }
 
         _logger.Information("Loaded {Count} custom charts!", _customCharts.Count);
-        
-        ExtractCharts(Path.Combine(gameEnv.LoaderDataFolder, ".chart_temp"));
+
+        var tempDir = Path.Combine(gameEnv.LoaderDataFolder, ".chart_temp");
+        ExtractCharts(tempDir);
         _logger.Information("Extracted charts and written manifest");
     }
 
     public IEnumerable<string> RegisterDependentFiles()
     {
-        foreach (var provider in _customCharts)
-        {
-            switch (provider)
-            {
-                case ZippedChartProvider zip:
-                    yield return zip.ZipFilePath;
-                    break;
-                case FolderChartProvider folder:
-                {
-                    yield return Path.Combine(folder.ChartDir, "chart.json");
-
-                    var info = folder.GetChartInfo();
-                    if(info == null)
-                        continue;
-
-                    yield return Path.Combine(folder.ChartDir, info.JacketFileName);
-                    yield return Path.Combine(folder.ChartDir, info.SongFileName);
-                    break;
-                }
-            }
-        }
+        return _customCharts.SelectMany(c => c.RegisterDependentFiles());
     }
 
     public void ApplyPatches(IPatchApplicator applicator)
@@ -188,7 +169,9 @@ public class ChartMod : IModInit
     {
         if(Directory.Exists(tempDir))
             Directory.Delete(tempDir, true);
+        
         Directory.CreateDirectory(tempDir);
+        _logger.Debug("Linking/extracting charts into: {TempPath}", tempDir);
         
         var manifest = new ChartManifest
         {
@@ -208,13 +191,18 @@ public class ChartMod : IModInit
                 continue;
             foreach (var file in filesToExtract)
             {
+                var target = Path.Combine(tempDir, meta.Id);
+                if (!Directory.Exists(target))
+                    Directory.CreateDirectory(target);
+                target = Path.Combine(target, file);
+
+                if (chart.TrySymlinkDataFile(file, target))
+                    continue;
+                
                 var buf = chart.GetDataFile(file);
                 if (buf.Length > 0)
                 {
-                    var path = Path.Combine(tempDir, meta.Id);
-                    if (!Directory.Exists(path))
-                        Directory.CreateDirectory(path);
-                    File.WriteAllBytes(Path.Combine(path, file), buf);
+                    File.WriteAllBytes(target, buf);
                 }
             }
         }
