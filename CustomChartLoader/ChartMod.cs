@@ -11,7 +11,7 @@ namespace CustomChartLoader;
 public class ChartMod : IModInit
 {
     public string ModName => "CustomChartLoader";
-    public string ModVersion => "0.0.1";
+    public string ModVersion => "0.0.2";
 
     private IGameEnv _gameEnv = null!;
     private IProgressTracker _progressTracker = null!;
