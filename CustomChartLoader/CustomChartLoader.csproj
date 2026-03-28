@@ -8,7 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\ModContract\ModContract.csproj" />
+        <ProjectReference Include="..\ModContract\ModContract.csproj" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <EmbeddedResource Include="Patches\RedirectChartHook.gml" LogicalName="RedirectChartHook.gml" />
+        <EmbeddedResource Include="Patches\SongPackHook.gml" LogicalName="SongPackHook.gml" />
+        <EmbeddedResource Include="Patches\ChartLoadHook.gml" LogicalName="gml_GlobalScript_VSMLChartLoadHook.gml" />
     </ItemGroup>
 
 </Project>

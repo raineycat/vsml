@@ -11,7 +11,7 @@ namespace CustomChartLoader;
 public class ChartMod : IModInit
 {
     public string ModName => "CustomChartLoader";
-    public string ModVersion => "0.0.2";
+    public string ModVersion => "0.0.3";
 
     private IGameEnv _gameEnv = null!;
     private IProgressTracker _progressTracker = null!;
@@ -60,15 +60,11 @@ public class ChartMod : IModInit
 
     public void ApplyPatches(IPatchApplicator applicator)
     {
-        applicator.ApplyScript(new CustomChartScript(Path.Combine(_chartsDir, "_manifest")));
+        applicator.ApplyScriptFromResource("gml_GlobalScript_VSMLChartLoadHook");
         applicator.ApplyPatch(new CustomChartScriptHook());
         
-        applicator.ApplyScript(new CustomSongPackScript());
-        applicator.ApplyPatch(new CustomSongPackScriptHook());
-        
-        applicator.ApplyScript(new CustomChartFileScript());
-        applicator.ApplyPatch(new CustomChartFileScriptHook("gml_GlobalScript_LoadSong"));
-        applicator.ApplyPatch(new CustomChartFileScriptHook("gml_GlobalScript_LoadSongData"));
+        applicator.HookFunctionFromResource("create_song_packs", "AddSongPack", "SongPackHook.gml");
+        applicator.HookFunctionFromResource("read_binary_chart", "RedirectCharts", "RedirectChartHook.gml");
 
         var nextAudioGroupId = applicator.GameData.AudioGroups.Count;
         var modAudioGroup = new UndertaleAudioGroup

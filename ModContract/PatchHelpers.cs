@@ -1,4 +1,5 @@
-﻿using UndertaleModLib;
+﻿using System.Reflection;
+using UndertaleModLib;
 using UndertaleModLib.Models;
 
 namespace ModContract;
@@ -49,5 +50,46 @@ public static class PatchHelpers
             .Where(i => i.ValueVariable != null)
             .Select(i => i.ValueVariable)
             .First(v => cond(v));
+    }
+
+    public static void ApplyScriptFromResource(this IPatchApplicator applicator, string codeEntryName)
+    {
+        using var stream = Assembly.GetCallingAssembly().GetManifestResourceStream(codeEntryName + ".gml");
+        if (stream == null)
+        {
+            throw new ApplicationException("Missing script resource: " + codeEntryName);
+        }
+
+        applicator.ApplyScript(new EmbeddedResourceScript(codeEntryName, stream));
+    }
+
+    public static void ApplyScriptFromResource(this IPatchApplicator applicator, string codeEntryName, string resourceName)
+    {
+        using var stream = Assembly.GetCallingAssembly().GetManifestResourceStream(resourceName);
+        if (stream == null)
+        {
+            throw new ApplicationException("Missing script resource: " + resourceName);
+        }
+
+        applicator.ApplyScript(new EmbeddedResourceScript(codeEntryName, stream));
+    }
+
+    public static void HookFunctionFromResource(this IPatchApplicator applicator, string targetName, string hookName, string resourceName)
+    {
+        using var stream = Assembly.GetCallingAssembly().GetManifestResourceStream(resourceName);
+        if (stream == null)
+        {
+            throw new ApplicationException("Missing hook resource: " + resourceName);
+        }
+
+        using var reader = new StreamReader(stream);
+        var hookCode = reader.ReadToEnd();
+        applicator.HookFunction(targetName, hookName, hookCode);
+    }
+
+    private class EmbeddedResourceScript(string codeName, Stream resource) : IAdditionalScript
+    {
+        public string FunctionName { get; } = codeName;
+        public string SourceCode { get; } = new StreamReader(resource).ReadToEnd();
     }
 }
