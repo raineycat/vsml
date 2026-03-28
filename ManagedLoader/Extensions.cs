@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using UndertaleModLib.Models;
 
 namespace ManagedLoader;
 
@@ -9,5 +10,10 @@ public static class Extensions
     {
         var acc = default(TSum);
         return enumerable.Aggregate(acc, (current, el) => current + selector(el));
+    }
+
+    public static bool IsOfType(this UndertaleInstruction instruction, UndertaleInstruction.InstructionType type)
+    {
+        return UndertaleInstruction.GetInstructionType(instruction.Kind) == type;
     }
 }

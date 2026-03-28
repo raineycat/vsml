@@ -17,6 +17,9 @@ default:
     @echo "[ VSML - {{git_branch}}/{{git_commit}} ]"
     @just --list
 
+fetch-submodules:
+    git submodule update --init --recursive
+
 [windows]
 make-zip: make-dist
     tar -a -cf vsml.zip {{dist_dir}}
@@ -47,7 +50,7 @@ make-dist: build-all
     cp {{injector_bin}}/{{lowercase(build_cfg)}}/version.dll {{dist_dir}}/
 
     # copy loader and dependencies
-    cp {{loader_bin}}/ManagedLoader.{dll,runtimeconfig.json} {{dist_dir}}/VSML/Core/
+    cp {{loader_bin}}/ManagedLoader.{dll,pdb,runtimeconfig.json} {{dist_dir}}/VSML/Core/
     cp {{loader_bin}}/ModContract.dll {{dist_dir}}/VSML/Core/
     cp {{loader_bin}}/Serilog.dll {{dist_dir}}/VSML/Core/
     cp {{loader_bin}}/Serilog.Sinks.File.dll {{dist_dir}}/VSML/Core/

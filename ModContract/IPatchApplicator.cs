@@ -9,4 +9,5 @@ public interface IPatchApplicator
     UndertaleString MakeString(string s) => GameData.Strings.MakeString(s);
     void ApplyPatch(ICodePatch patch);
     void ApplyScript(IAdditionalScript script);
+    void HookFunction(string targetName, string hookName, string codeBody);
 }

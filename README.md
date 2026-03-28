@@ -64,6 +64,10 @@ If you're building on Linux, you also need:
 > 
 > If you didn't do this, then you can run:
 > ```shell
+> just fetch-submodules
+> ```
+> or
+> ```shell
 > git submodule update --init --recursive
 > ```
 

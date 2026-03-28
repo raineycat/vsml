@@ -22,6 +22,13 @@ public class ChartMod : IModInit
     public void ApplyPatches(IPatchApplicator applicator)
     {
         _logger.Information("Applying patches!");
+        
+        // HookFunction usage example
+        applicator.HookFunction("read_binary_chart", "MyTestHook", """
+function $$hook(filepath, verifySig, modsFlag) {
+    debug("HOOKED read_binary_chart: ", filepath, verifySig, modsFlag);
+    return $$original(filepath, false, modsFlag);
+}""");
     }
 }
 ```

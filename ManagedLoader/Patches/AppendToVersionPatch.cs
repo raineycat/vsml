@@ -9,31 +9,21 @@ public class AppendToVersionPatch(string textToAppend) : ICodePatch
     public string PatchName => "Add to version text";
     public string TargetCodeName => "gml_Object_initiategame_Create_0";
 
-    public int? Target(List<UndertaleInstruction> instructions)
-    {
-        for(var i = 0; i < instructions.Count; i++)
+    public int? Target(List<UndertaleInstruction> instructions) =>
+        instructions.FindIndex(ins => ins is
         {
-            if (instructions[i] is
-                {
-                    Kind: UndertaleInstruction.Opcode.Pop, 
-                    Type1: UndertaleInstruction.DataType.Variable,
-                    Type2: UndertaleInstruction.DataType.Variable,
-                    ValueVariable:
-                    {
-                        Name:
-                        {
-                            Content: "version_number"
-                        },
-                        InstanceType: UndertaleInstruction.InstanceType.Global
-                    }
-                })
+            Kind: UndertaleInstruction.Opcode.Pop,
+            Type1: UndertaleInstruction.DataType.Variable,
+            Type2: UndertaleInstruction.DataType.Variable,
+            ValueVariable:
             {
-                return i;
+                Name:
+                {
+                    Content: "version_number"
+                },
+                InstanceType: UndertaleInstruction.InstanceType.Global
             }
-        }
-
-        return null;
-    }
+        });
 
     public IEnumerable<UndertaleInstruction> Codegen(UndertaleData gameData, UndertaleCode targetCode)
     {

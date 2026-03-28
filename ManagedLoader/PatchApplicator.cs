@@ -1,6 +1,8 @@
 ﻿using ModContract;
+using Underanalyzer.Decompiler;
 using UndertaleModLib;
 using UndertaleModLib.Compiler;
+using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
 
 namespace ManagedLoader;
@@ -14,8 +16,17 @@ public class PatchApplicator(UndertaleData gameData) : IPatchApplicator
         ModLoader.Logger.Debug("ApplyPatch: {PatchName} (to {CodeName})", patch.PatchName, patch.TargetCodeName);
         
         var targetCode = GameData.Code.ByName(patch.TargetCodeName);
-        var injectPoint = patch.Target(targetCode.Instructions);
-        if (injectPoint == null)
+        int? injectPoint = null;
+        try
+        {
+            injectPoint = patch.Target(targetCode.Instructions);
+        }
+        catch (Exception e)
+        {
+            ModLoader.Logger.Warning("Patch {PatchName} targeter threw: {Exception}", patch.PatchName, e);
+        }
+
+        if (injectPoint == null || injectPoint < 0)
         {
             ModLoader.Logger.Warning("Patch {PatchName} failed to find an injection point", patch.PatchName);
             return;
@@ -37,7 +48,7 @@ public class PatchApplicator(UndertaleData gameData) : IPatchApplicator
         for(var i = 0; i < targetCode.Instructions.Count; i++)
         {
             var ins = targetCode.Instructions[i];
-            if (ins.Kind is UndertaleInstruction.Opcode.B or UndertaleInstruction.Opcode.Bf or UndertaleInstruction.Opcode.Bt or UndertaleInstruction.Opcode.PushEnv or UndertaleInstruction.Opcode.PopEnv)
+            if (ins.IsOfType(UndertaleInstruction.InstructionType.GotoInstruction))
             {
                 ModLoader.Logger.Verbose("Branch: {Ins}", ins);
                 var jumpTarget = targetCode.Instructions.Take(int.Max(0, i - newCode.Count))
@@ -79,5 +90,52 @@ public class PatchApplicator(UndertaleData gameData) : IPatchApplicator
         {
             ModLoader.Logger.Error("Failed to compile {Name}: {Errors}", script.FunctionName, result.Errors);
         }
+    }
+
+    public void HookFunction(string targetName, string hookName, string codeBody)
+    {
+        var realHookName = $"HOOK_{targetName}_{hookName}";
+        // var trampolineName = $"ORIG_{targetName}_{hookName}";
+        var trampolineName = targetName;
+        ModLoader.Logger.Debug("Applying hook: {HookName}", realHookName);
+        
+        var importGroup = new CodeImportGroup(GameData);
+        importGroup.QueueReplace($"gml_GlobalScript_{realHookName}", codeBody
+            .Replace("$$hook", realHookName)
+            .Replace("$$original", trampolineName));
+        var importResult = importGroup.Import(false);
+
+        if (!importResult.Successful)
+        {
+            ModLoader.Logger.Error("Hook compilation failed! {Errors}", importResult.PrintAllErrors(true));
+            return;
+        }
+        ModLoader.Logger.Debug("Compiled hook code");
+
+        var hookFunc = GameData.Functions.ByName($"gml_Script_{realHookName}");
+        foreach (var code in GameData.Code)
+        {
+            if (code.Name.Content == $"gml_GlobalScript_{realHookName}")
+            {
+                continue;
+            }
+            
+            foreach (var ins in code.Instructions)
+            {
+                if (ins.IsOfType(UndertaleInstruction.InstructionType.CallInstruction) && ins.ValueFunction != null)
+                {
+                    if (ins.ValueFunction.Name.Content != $"gml_Script_{targetName}")
+                    {
+                        continue;
+                    }
+                    
+                    ModLoader.Logger.Verbose("Patching ValueFunction: [{CodeEntry}] {Old} -> {New}",
+                        code, ins.ValueFunction, hookFunc);
+                    ins.ValueFunction = hookFunc;
+                }
+            }
+        }
+        
+        ModLoader.Logger.Debug("Finished hook application");
     }
 }
