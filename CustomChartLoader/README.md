@@ -28,8 +28,8 @@ Each chart needs a metadata file, `chart.json` in the root. This uses the follow
     
     "Difficulties": {
         "OPENING": {
-          "DifficultyConstant": 1,
-          "DifficultyDisplay": "1.0",
+          "Value": 1,
+          "Display": "1.0",
           "NoteDesigner": "Rainey"
         }
     }
