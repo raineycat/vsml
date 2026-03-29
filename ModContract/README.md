@@ -11,12 +11,15 @@ public class ChartMod : IModInit
     public string ModName => "MyMod";
     public string ModVersion => "1.0.0";
 
-    private Logger _logger = null!;
+    private ILogger _logger = null!;
 
-    public void SetupMod(IGameEnv gameEnv, Logger logger)
+    public void SetupMod(IGameEnv gameEnv, IProgressTracker progressTracker, ILogger logger)
     {
         _logger = logger; 
         _logger.Information("Setting up!");
+        
+        progressTracker.SetCurrentStep("Loading sample mod");
+        // do setup
     }
 
     public void ApplyPatches(IPatchApplicator applicator)
@@ -40,4 +43,17 @@ function $$hook(filepath, verifySig, modsFlag) {
 - `ICodePatch` represents a low-level GM:S assembly patch.
 - `SourcePatch` is a wrapper over `ICodePatch` that compiles given GML code and inserts that instead of you writing assembly. Note: this might not play well with locals, I haven't tested it thoroughly.
 - `IAdditionalScript` represents a new script to add into the game. This isn't inserted anywhere, you need to use one of the patch types above to call it from somewhere.
-- `PatchHelpers` is a utility class for common patching operations. Currently, it provides a helper to generate assembly for calling `debug()` with a given string.
+- `PatchHelpers` is a utility class for common patching operations.
+- `IProgressTracker` is an interface that allows your mod to update the user on what its doing. You should update this if your mod performs any particularly long tasks. These messages are displayed on the loading dialog, so make sure they're clean and readable.
+
+There is a set of extension methods that allow loading GML code from embedded resources in your mod DLL.
+
+By default, the names of embedded resources is long and contains your mod assembly name, but this can be overridden by setting the `LogicalName` property.
+I recommend doing this, since it makes your code simpler.
+
+```xml
+<ItemGroup>
+    <!-- Embedded GML example -->
+    <EmbeddedResource Include="MyScript.gml" LogicalName="gml_GlobalScript_TestMod_MyScript.gml" />
+</ItemGroup>
+```

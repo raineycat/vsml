@@ -1,12 +1,12 @@
 # VSML - A mod loader for vivid/stasis
 
-## Components
+### Individual component documentation
 - [Installer](Installer/README.md)
 - [Injector](Injector/README.md)
-- [Managed Loader](ManagedLoader/README.md)
-- [Mod Contract](ModContract/README.md)
-- [Chart Mod](CustomChartLoader/README.md)
-- [Debugging Mod](DebuggingMod/README.md)
+- [Core modloader](ManagedLoader/README.md)
+- [Mod contract](ModContract/README.md) - **Read if you want to make mods**
+- [Chart loader mod](CustomChartLoader/README.md) - **Read if you want to make charts**
+- [Script loader mod](DebuggingMod/README.md)
 
 ### Sister projects
 - [charted](https://github.com/raineycat/charted)
@@ -78,3 +78,5 @@ VSML uses the Just command runner to make building easier. The most useful recip
 - `just clean-all` - Removes all generated build artifacts
 
 The recipes will automatically handle cross compiling from Linux to Windows if needed.
+
+To make a release build, use `just --set build_cfg Release [recipe]`. 

@@ -8,8 +8,8 @@ Your mod code only runs once, before the game loads, and after that it never run
 However, the .NET environment does stay alive through the whole lifetime of the game.
 
 ## Usage
-- Put the injectior DLL into the game folder
-- Add `ManagedLoader.dll` and its dependencies into the `Mods` folder
-- Add any mod DLLs into the `Mods` folder too
+- Put the injector DLL into the game folder
+- Add `ManagedLoader.dll` and its dependencies into the `VSML/Core` folder
+- Add any mod DLLs into the `VSML/Mods` folder too
 - Run the game
-- Edit the config file (`vsml.json`) if needed
+- Edit the config file (`VSML/config.json`) if needed
