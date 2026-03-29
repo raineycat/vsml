@@ -9,7 +9,7 @@ Currently, charts can either be a folder containing the needed resources, or a Z
 ### Chart format
 Each chart needs a metadata file, `chart.json` in the root. This uses the following format:
 
-> Note: The two filename fields get appended to the directory of the chart.json file
+> Note: The filename fields get appended to the directory of the chart.json file
 
 ```json
 {
@@ -19,24 +19,26 @@ Each chart needs a metadata file, `chart.json` in the root. This uses the follow
     "HasEncore": false,
     
     "SongFileName": "my_song.wav",
+    "PreviewFileName": "my_preview.wav",
     "SongArtist": "An Artist",
     "DisplayBpm": "120",
     
     "JacketFileName": "cover_art.png",
     "JacketArtist": "An(other) Artist",
     
-    "Difficulties": [
-        {
-            "DifficultyConstant": 1,
-            "DifficultyDisplay": "1.0",
-            "NoteDesigner": "Rainey"
+    "Difficulties": {
+        "OPENING": {
+          "DifficultyConstant": 1,
+          "DifficultyDisplay": "1.0",
+          "NoteDesigner": "Rainey"
         }
-    ]
+    }
 }
 ```
 
-An entry should be added into the `Difficulties` array for each chart you provide, but set `HasEncore` to true if you provide one.
+An entry should be added into the `Difficulties` map for each chart you provide, but set `HasEncore` to true if you provide one.
 You should then add your binary chart files (`OPENING/MIDDLE/etc.vsb`) into the chart directory as well.
 
-The game currently doesn't expect there to be less than three difficulties though, so even if you don't include them they will show in the song select menu.
-> TODO: Write a patch to fix this somehow in the future.
+The jacket needs to be a PNG file, and only WAVs are known to work for audio.
+
+`PreviewFileName` is optional, and will use the main song file if not specified.
