@@ -7,8 +7,9 @@ use zip::read::root_dir_common_filter;
 
 const VS_APP_ID: i32 = 2093940;
 
-const VERSION_NAME_URL: &str = "https://vsml.reddust.uk/version.txt";
-const ZIP_FILE_URL: &str = "https://vsml.reddust.uk/vsml.zip";
+const VERSION_NAME_URL: &str =
+    "https://raw.githubusercontent.com/raineycat/vsml/refs/heads/mistress/latest.txt";
+const ZIP_FILE_URL: &str = "https://github.com/raineycat/vsml/releases/latest/download/vsml.zip";
 
 const AUTO_DETECT_TOOLTIP: &str = r#"This scans your Steam library to try and find the game. 
 It should work in the majority of situations, 
@@ -18,6 +19,7 @@ pub struct State {
     game_dir: Option<path::PathBuf>,
     latest_version: Option<String>,
     is_installing: bool,
+    error_message: Option<String>,
 }
 
 #[derive(Clone)]
@@ -31,6 +33,9 @@ pub enum Message {
 
     SetLatestVersion(String),
     CheckLatestVersion,
+
+    SetErrorMessage(String),
+    ClearErrorMessage,
 }
 
 impl State {
@@ -39,6 +44,7 @@ impl State {
             game_dir: None,
             latest_version: None,
             is_installing: false,
+            error_message: None,
         };
         let tasks =
             [Message::DetectGameDir, Message::CheckLatestVersion].map(|m| iced::Task::done(m));
@@ -82,6 +88,15 @@ impl State {
                 iced::Task::none()
             }
             Message::CheckLatestVersion => get_version_task(),
+
+            Message::SetErrorMessage(msg) => {
+                self.error_message = Some(msg);
+                iced::Task::none()
+            }
+            Message::ClearErrorMessage => {
+                self.error_message = None;
+                iced::Task::none()
+            }
         }
     }
 
@@ -140,6 +155,10 @@ impl State {
                     text("The options currently set aren't valid!").style(text::warning),
                 )
             },
+            match self.error_message.as_ref() {
+                Some(msg) => text!("{msg}").style(text::danger),
+                None => text(""),
+            },
         ]
         .padding(60)
         .spacing(15);
@@ -184,12 +203,15 @@ fn browse_dir_task() -> iced::Task<Message> {
 
 fn get_version_task() -> iced::Task<Message> {
     iced::Task::future(reqwest::get(VERSION_NAME_URL))
+        .and_then(|res| iced::Task::done(res.error_for_status()))
         .and_then(|res| iced::Task::future(res.text()))
         .then(|res| match res {
             Ok(r) => iced::Task::done(Message::SetLatestVersion(r)),
             Err(e) => {
                 log::error!("Failed to fetch latest version: {}", e);
-                iced::Task::none()
+                iced::Task::done(Message::SetErrorMessage(format!(
+                    "Failed to fetch the latest version! - {e}"
+                )))
             }
         })
 }
@@ -199,7 +221,13 @@ fn install_task(target_dir: path::PathBuf) -> iced::Task<Message> {
         Ok(_) => iced::Task::done(Message::EndInstall),
         Err(e) => {
             log::error!("Install failed: {}", e);
-            iced::Task::done(Message::EndInstall)
+            let tasks = vec![
+                iced::Task::done(Message::SetErrorMessage(format!(
+                    "Failed to fetch install! - {e}"
+                ))),
+                iced::Task::done(Message::EndInstall),
+            ];
+            iced::Task::batch(tasks)
         }
     })
 }
