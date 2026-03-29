@@ -7,6 +7,7 @@ public class CustomChartInfo
     public required string Version { get; set; }
     
     public required string SongFileName { get; set; }
+    public string? PreviewFileName { get; set; }
     public required string SongArtist { get; set; }
     public required string DisplayBpm { get; set; }
     
@@ -14,5 +15,5 @@ public class CustomChartInfo
     public required string JacketArtist { get; set; }
     
     public bool HasEncore { get; set; }
-    public List<CustomDifficultyInfo> Difficulties { get; set; } = [];
+    public Dictionary<string, CustomDifficultyInfo> Difficulties { get; set; } = [];
 }

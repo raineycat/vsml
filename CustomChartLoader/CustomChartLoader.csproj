@@ -14,6 +14,7 @@
     <ItemGroup>
         <EmbeddedResource Include="Patches\RedirectChartHook.gml" LogicalName="RedirectChartHook.gml" />
         <EmbeddedResource Include="Patches\SongPackHook.gml" LogicalName="SongPackHook.gml" />
+        <EmbeddedResource Include="Patches\SongUnlockHook.gml" LogicalName="SongUnlockHook.gml" />
         <EmbeddedResource Include="Patches\ChartLoadHook.gml" LogicalName="gml_GlobalScript_VSMLChartLoadHook.gml" />
     </ItemGroup>
 

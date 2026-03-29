@@ -65,6 +65,7 @@ public class ChartMod : IModInit
         
         applicator.HookFunctionFromResource("create_song_packs", "AddSongPack", "SongPackHook.gml");
         applicator.HookFunctionFromResource("read_binary_chart", "RedirectCharts", "RedirectChartHook.gml");
+        applicator.HookFunctionFromResource("process_song_unlocks", "UnlockModCharts", "SongUnlockHook.gml");
 
         var nextAudioGroupId = applicator.GameData.AudioGroups.Count;
         var modAudioGroup = new UndertaleAudioGroup
@@ -103,17 +104,24 @@ public class ChartMod : IModInit
                 File = applicator.MakeString(Path.GetFileName(chart.SongFileName)),
                 Type = applicator.MakeString(Path.GetExtension(chart.SongFileName))
             });
-            
+
+            var actualPreviewFile = chart.PreviewFileName ?? chart.SongFileName;
+            var previewAudio = new UndertaleEmbeddedAudio
+            {
+                Name = applicator.MakeString(actualPreviewFile),
+                Data = provider.GetDataFile(actualPreviewFile)
+            };
+            groupSounds.Add(previewAudio);
             applicator.GameData.Sounds.Add(new UndertaleSound
             {
                 AudioFile = null,
                 AudioGroup = modAudioGroup,
-                AudioID = nextAudioId,
+                AudioID = nextAudioId + 1,
                 GroupID = nextAudioGroupId,
                 Flags = audioFlags,
                 Name = applicator.MakeString("preview_" + chart.Id),
-                File = applicator.MakeString(Path.GetFileName(chart.SongFileName)),
-                Type = applicator.MakeString(Path.GetExtension(chart.SongFileName))
+                File = applicator.MakeString(Path.GetFileName(actualPreviewFile)),
+                Type = applicator.MakeString(Path.GetExtension(actualPreviewFile))
             });
 
             var jacketImg = GMImage.FromPng(provider.GetDataFile(chart.JacketFileName));
@@ -178,13 +186,14 @@ public class ChartMod : IModInit
         var manifestPath = Path.Combine(_chartsDir, "_manifest");
         File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest));
         _logger.Debug("Manifest path: {Path}", manifestPath);
-
-        string[] filesToExtract = ["OPENING.vsb", "MIDDLE.vsb", "FINALE.vsb", "ENCORE.vsb"];
+        
         foreach (var chart in _customCharts)
         {
             var meta = chart.GetChartInfo();
             if(meta == null)
                 continue;
+
+            var filesToExtract = meta.Difficulties.Keys.Select(it => it + ".vsb");
             foreach (var file in filesToExtract)
             {
                 var target = Path.Combine(tempDir, meta.Id);

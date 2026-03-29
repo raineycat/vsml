@@ -72,15 +72,28 @@ function VSMLChartLoadHook(songList) {
            difficulty_constant_4: 0,
            difficulty_display_4: "0",
            note_designer_4: "?",
+           
+           has_difficulties: [],
        };
        
-       for (var j = 0; j < array_length(chart.Difficulties); j++) {
-           var diff = chart.Difficulties[j];
-           struct_set(data, string("difficulty_constant_{0}", j + 1), diff.DifficultyConstant);
-           struct_set(data, string("difficulty_display_{0}", j + 1), diff.DifficultyDisplay);
-           struct_set(data, string("note_designer_{0}", j + 1), diff.NoteDesigner);
+       var presentDifficulties = variable_struct_get_names(chart.Difficulties);
+       var difficultyNames = ["OPENING", "MIDDLE", "FINALE", "ENCORE"];
+       
+       for (var j = 0; j < array_length(presentDifficulties); j++) {
+           var diffName = presentDifficulties[j];
+           var diffInfo = variable_struct_get(chart.Difficulties, diffName);
+           var diffNum = array_get_index(difficultyNames, diffName) + 1;
+           
+           if (diffNum < 1) {
+               continue;
+           }
+           
+           struct_set(data, string("difficulty_constant_{0}", diffNum), diffInfo.Value);
+           struct_set(data, string("difficulty_display_{0}", diffNum), diffInfo.Display);
+           struct_set(data, string("note_designer_{0}", diffNum), diffInfo.NoteDesigner);
        }
        
+       data.has_difficulties = presentDifficulties;
        array_push(global.vsml_songs, data);
    }
    
