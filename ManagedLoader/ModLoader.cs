@@ -202,7 +202,10 @@ public class ModLoader : IGameEnv
         var patcher = new PatchApplicator(_gameData);
         
         patcher.ApplyPatch(new DebugFunctionPatchOld());
-        patcher.ApplyPatch(new AppendToVersionPatch(" (VSML 0.1.4)"));
+        
+        var version = GetType().Assembly.GetName().Version?.ToString() ?? "???";
+        var appendText = $"  -  VSML {version}: {_modInitializers.Count} mods";
+        patcher.ApplyPatch(new AppendToVersionPatch(appendText));
 
         if (Config.EnableGameConsole)
         {
