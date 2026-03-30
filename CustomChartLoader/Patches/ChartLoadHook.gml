@@ -37,6 +37,7 @@ function VSMLChartLoadHook(songList) {
            artist: chart.SongArtist,
            jacket_artist: chart.JacketArtist,
            bpm_display: chart.DisplayBpm,
+           version: chart.Version,
            
            audio_id: asset_get_index("music_chart_" + chart.Id),
            preview_id: asset_get_index("preview_" + chart.Id),
