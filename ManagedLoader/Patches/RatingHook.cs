@@ -4,10 +4,12 @@ using UndertaleModLib.Models;
 
 namespace ManagedLoader.Patches;
 
-public class RatingHook : ICodePatch
+public class RatingHook(bool isImagePatch = false) : ICodePatch
 {
-    public string PatchName => "Rating hook";
+    public string PatchName => "Rating hook" + (isImagePatch ? " for images" : null);
     public string TargetCodeName => "gml_GlobalScript_add_value_to_ratingscore_table";
+    UndertaleInstruction? inst;
+    bool firstSkipped = false;
 
     public int? Target(List<UndertaleInstruction> instructions)
     {
@@ -36,6 +38,12 @@ public class RatingHook : ICodePatch
                 Kind: UndertaleInstruction.Opcode.Bf
             })
             {
+                if (isImagePatch && !firstSkipped)
+                {
+                    firstSkipped = true;
+                    continue;
+                }
+                inst = instructions[i];
                 return i;
             }
         }
@@ -45,6 +53,12 @@ public class RatingHook : ICodePatch
 
     public IEnumerable<UndertaleInstruction> Codegen(UndertaleData gameData, UndertaleCode targetCode)
     {
+        // bf [end of loop]
+        yield return new UndertaleInstruction
+        {
+            Kind = UndertaleInstruction.Opcode.Bf,
+            JumpOffset = inst!.JumpOffset + 4
+        };
         // push.s "is_modded"
         var isModdedString = gameData.Strings.MakeString("is_modded");
         yield return new UndertaleInstruction

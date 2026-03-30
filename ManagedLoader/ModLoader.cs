@@ -61,9 +61,13 @@ public class ModLoader : IGameEnv
         if (File.Exists(logFilePath)) 
             File.Move(logFilePath, logFilePath + ".old", true);
         
+        if (Config.EnableLoaderConsole)
+            Utils.SetConsoleShown(true);
+
         Logger = new LoggerConfiguration()
             .MinimumLevel.Is(Config.LogLevel)
             .WriteTo.File(logFilePath)
+            .WriteTo.Console()
             .CreateLogger();
         
         Logger.Information("Starting loader!");
@@ -89,6 +93,8 @@ public class ModLoader : IGameEnv
         ScanMods();
         
         Logger.Information("Finished loader pre-init");
+
+        _currentState.DependentFileHashes.Add("_LOADER", Utils.HashFileFast(Path.Combine(LoaderDataFolder, "Core", "ManagedLoader.dll")));
         
         Logger.Debug("Registering mod dependency files");
         foreach (var file in _modInitializers.SelectMany(m => m.RegisterDependentFiles()))
@@ -133,6 +139,7 @@ public class ModLoader : IGameEnv
             var sw = Stopwatch.StartNew();
             _gameData = UndertaleIO.Read(stream);
             Logger.Information("Finished loading data! Took {ElapsedTime}", sw.Elapsed);
+            stream.Close();
         }
 
         {
@@ -150,9 +157,13 @@ public class ModLoader : IGameEnv
             var sw = Stopwatch.StartNew();
             UndertaleIO.Write(stream, _gameData, msg => ProgressTracker.SetCurrentStep("Writing data: " + msg));
             Logger.Information("Finished writing shadow file! Took {ElapsedTime}", sw.Elapsed);
+            stream.Close();
         }
         
         _gameData.Dispose();
+        _gameData = null!;
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
         Logger.Information("Finished loader init");
         ProgressTracker.SetCurrentStep("Finished!");
     }
@@ -203,6 +214,7 @@ public class ModLoader : IGameEnv
         
         patcher.ApplyPatch(new DebugFunctionPatchOld());
         patcher.ApplyPatch(new RatingHook());
+        patcher.ApplyPatch(new RatingHook(true));
         
         var version = GetType().Assembly.GetName().Version?.ToString() ?? "???";
         var appendText = $"  -  VSML {version}: {_modInitializers.Count} mods";

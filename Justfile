@@ -1,5 +1,6 @@
 build_cfg := "Debug"
 dist_dir := "vsml-dist"
+set windows-shell := ["C:\\Program Files\\Git\\bin\\sh.exe", "-c"]
 
 git_branch := shell("git rev-parse --abbrev-ref HEAD")
 git_commit := shell("git rev-parse --short HEAD")
@@ -30,18 +31,20 @@ make-zip: make-dist
     zip -r vsml {{dist_dir}}
     rm -rf {{dist_dir}}
 
-make-dist: build-all
+make-dist: build-installer make-dev
+
+make-dev: build-runtime
     # clean the dir if it exists
-    rm -rf {{dist_dir}}
+    # rm -rf {{dist_dir}}
 
     # set up directory structure
-    mkdir {{dist_dir}}
-    mkdir {{dist_dir}}/VSML
-    mkdir {{dist_dir}}/VSML/Core
-    mkdir {{dist_dir}}/VSML/Logs
-    mkdir {{dist_dir}}/VSML/Mods
-    mkdir {{dist_dir}}/VSML/CustomCharts
-    mkdir {{dist_dir}}/VSML/DebugScripts
+    mkdir -p {{dist_dir}}
+    mkdir -p {{dist_dir}}/VSML
+    mkdir -p {{dist_dir}}/VSML/Core
+    mkdir -p {{dist_dir}}/VSML/Logs
+    mkdir -p {{dist_dir}}/VSML/Mods
+    mkdir -p {{dist_dir}}/VSML/CustomCharts
+    mkdir -p {{dist_dir}}/VSML/DebugScripts
 
     # write version file
     echo "{{git_branch}}/{{git_commit}}" > {{dist_dir}}/VSML/version.txt
@@ -53,6 +56,7 @@ make-dist: build-all
     cp {{loader_bin}}/ManagedLoader.{dll,pdb,runtimeconfig.json} {{dist_dir}}/VSML/Core/
     cp {{loader_bin}}/ModContract.dll {{dist_dir}}/VSML/Core/
     cp {{loader_bin}}/Serilog.dll {{dist_dir}}/VSML/Core/
+    cp {{loader_bin}}/Serilog.Sinks.Console.dll {{dist_dir}}/VSML/Core/
     cp {{loader_bin}}/Serilog.Sinks.File.dll {{dist_dir}}/VSML/Core/
     cp {{loader_bin}}/UndertaleModLib.dll {{dist_dir}}/VSML/Core/
     cp {{loader_bin}}/Underanalyzer.dll {{dist_dir}}/VSML/Core/
@@ -68,7 +72,8 @@ make-dist: build-all
     # copy other assets
     cp ModifierCommands.gml {{dist_dir}}/VSML/DebugScripts/  
 
-build-all: build-injector build-loader build-installer
+build-all: build-runtime build-installer
+build-runtime: build-injector build-loader
 clean-all: clean-injector clean-loader clean-installer
 
 [working-directory: 'Injector']

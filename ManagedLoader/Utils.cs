@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.InteropServices;
 using K4os.Hash.xxHash;
 
 namespace ManagedLoader;
@@ -22,6 +23,8 @@ public static class Utils
         while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
             hash.Update(buffer.AsSpan(0, bytesRead));
 
+        stream.Dispose();
+
         return Convert.ToHexStringLower(hash.DigestBytes());
     }
 
@@ -39,5 +42,30 @@ public static class Utils
                 return null;
             }
         };
+    }
+
+    [DllImport("kernel32.dll")]
+    static extern IntPtr GetConsoleWindow();
+
+    [DllImport("user32.dll")]
+    static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("kernel32.dll")]
+    static extern int AllocConsole();
+
+    static bool consoleAllocated = false;
+    public static void SetConsoleShown(bool showConsole)
+    {
+        if (showConsole && !consoleAllocated)
+        {
+            AllocConsole();
+            StreamWriter standardOutput = new StreamWriter(Console.OpenStandardOutput())
+            {
+                AutoFlush = true
+            };
+            Console.SetOut(standardOutput);
+            consoleAllocated = true;
+        }
+        ShowWindow(GetConsoleWindow(), showConsole ? 5 : 0);
     }
 }
