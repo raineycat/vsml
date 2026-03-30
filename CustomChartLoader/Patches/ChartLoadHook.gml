@@ -20,7 +20,7 @@ function VSMLChartLoadHook(songList) {
            lastId = song.song_id;
        }
    }
-   lastId++;
+   lastId += 1000; // higher ID spacve to prevent conflicts
    debug("VSML songs start at:", lastId);
    
    var manifest = VSMLOpenJsonFile("VSML/CustomCharts/_manifest");
