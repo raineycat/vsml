@@ -47,7 +47,6 @@ function VSMLChartLoadHook(songList) {
            is_original: false,
            is_published: true,
            is_modded: true,
-           version: "999.999.999",
            
            unlock: {
                type: 0,
