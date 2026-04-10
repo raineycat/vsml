@@ -215,6 +215,7 @@ public class ModLoader : IGameEnv
         patcher.ApplyPatch(new DebugFunctionPatchOld());
         patcher.ApplyPatch(new RatingHook());
         patcher.ApplyPatch(new RatingHook(true));
+        patcher.ApplyPatch(new CompletionRatingHook());
         
         var version = GetType().Assembly.GetName().Version?.ToString() ?? "???";
         var appendText = $"  -  VSML {version}: {_modInitializers.Count} mods";
