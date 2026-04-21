@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ManagedLoader.Patches;
+using ManagedLoader.RunnerInterop;
 using ModContract;
 using Serilog;
 using Serilog.Core;
@@ -167,6 +168,11 @@ public class ModLoader : IGameEnv
         GC.WaitForPendingFinalizers();
         Logger.Information("Finished loader init");
         ProgressTracker.SetCurrentStep("Finished!");
+    }
+
+    public void SetupInterop(SafeRunner runner)
+    {
+        runner.ShowMessage("meowing!");
     }
 
     private void ScanMods()

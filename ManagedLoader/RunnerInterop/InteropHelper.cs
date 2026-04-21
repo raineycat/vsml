@@ -2,7 +2,7 @@ using ModContract;
 using UndertaleModLib;
 using UndertaleModLib.Models;
 
-namespace ManagedLoader;
+namespace ManagedLoader.RunnerInterop;
 
 public class InteropHelper
 {
@@ -21,8 +21,8 @@ public class InteropHelper
         
         var funcTest = new UndertaleExtensionFunction
         {
-            ID = 1000,
-            // Kind = 11,
+            ID = 90,
+            Kind = 11,
             Name = _data.Strings.MakeString("vsml_interop_test"),
             ExtName = _data.Strings.MakeString("vsml_interop_test"),
             RetType = UndertaleExtensionVarType.String,
@@ -31,7 +31,7 @@ public class InteropHelper
         var extensionDll = new UndertaleExtensionFile
         {
             Kind = UndertaleExtensionKind.Dll,
-            Filename = _data.Strings.MakeString(_dllPath),
+            Filename = _data.Strings.MakeString("version.dll"),
             InitScript = _data.Strings.MakeString(""),
             CleanupScript = _data.Strings.MakeString("")
         };
