@@ -4,7 +4,7 @@ use libloading::{Library, Symbol};
 use log::LevelFilter;
 use netcorehost::bindings::hostfxr::{hostfxr_delegate_type, load_assembly_fn};
 use netcorehost::error::HostingResult;
-use netcorehost::hostfxr::{HostfxrContext, InitializedForRuntimeConfig};
+use netcorehost::hostfxr::{HostfxrContext, InitializedForRuntimeConfig, ManagedFunction};
 use netcorehost::nethost;
 use netcorehost::pdcstring::PdCStr;
 use retour::GenericDetour;
@@ -12,12 +12,15 @@ use std::cell::OnceCell;
 use std::ffi::c_void;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::{env, mem, ptr};
 use windows::Win32::Foundation::HINSTANCE;
 use windows::Win32::System::SystemServices::{DLL_PROCESS_ATTACH, DLL_PROCESS_DETACH};
 
+mod interop;
 mod proxy;
+
+type ManagedEntryPoint = extern "system" fn(*const c_void, i32) -> i32;
 
 lazy_static! {
     static ref DOTNET_INIT: AtomicBool = AtomicBool::new(false);
@@ -25,6 +28,7 @@ lazy_static! {
     static ref CREATE_FILE_W_HOOK: GenericDetour<CreateFileWFn> = create_hook();
     static ref HOSTFXR_CTX: Arc<Mutex<OnceCell<HostfxrContext<InitializedForRuntimeConfig>>>> =
         Arc::new(Mutex::new(OnceCell::new()));
+    static ref MANAGED_ENTRY_POINT: OnceLock<ManagedFunction<ManagedEntryPoint>> = OnceLock::new();
 }
 
 #[unsafe(no_mangle)]
@@ -60,7 +64,7 @@ fn init_dll() -> anyhow::Result<()> {
     };
 
     Ftail::new()
-        .single_file(&log_file, true, log_level)
+        .single_file(&log_file, false, log_level)
         .init()?;
 
     log::info!("DLL init!");
@@ -251,17 +255,19 @@ fn try_init_dotnet() -> anyhow::Result<()> {
         .chain(std::iter::once(0))
         .collect();
 
-    type ManagedEntryPoint = fn(*const c_void, i32) -> i32;
-    let entry_point = unsafe {
+    let _ = MANAGED_ENTRY_POINT.set(unsafe {
         loader.get_function_with_unmanaged_callers_only::<ManagedEntryPoint>(
             PdCStr::from_slice_with_nul_unchecked(&entrypoint_type),
             PdCStr::from_slice_with_nul_unchecked(&entrypoint_method),
         )
-    }?;
+    }?);
 
     log::info!("Finished loading managed code");
 
-    let result = entry_point(ptr::null(), 0);
+    let callable = MANAGED_ENTRY_POINT
+        .get()
+        .ok_or(anyhow::anyhow!("Failed to get MANAGED_ENTRY_POINT"))?;
+    let result = callable(ptr::null(), 0);
     if result != 0 {
         anyhow::bail!("Managed entrypoint failed! {}", result);
     }

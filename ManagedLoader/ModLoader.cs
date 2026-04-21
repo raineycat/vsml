@@ -24,6 +24,7 @@ public class ModLoader : IGameEnv
     private UndertaleData _gameData = null!;
     private List<IModInit> _modInitializers = [];
     private PatchState _currentState = new();
+    private InteropHelper _interopHelper = null!;
 
     private static readonly JsonSerializerOptions _jsonConfigOptions = new()
     {
@@ -210,8 +211,10 @@ public class ModLoader : IGameEnv
 
     private void ApplyPatches()
     {
-        var patcher = new PatchApplicator(_gameData);
+        _interopHelper = new InteropHelper(_gameData, this);
+        _interopHelper.AddExtension();
         
+        var patcher = new PatchApplicator(_gameData);
         patcher.ApplyPatch(new DebugFunctionPatchOld());
         patcher.ApplyPatch(new RatingHook());
         patcher.ApplyPatch(new RatingHook(true));

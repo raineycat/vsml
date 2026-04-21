@@ -1,14 +1,28 @@
 ﻿using System.Runtime.InteropServices;
+using ModContract;
 
 namespace ManagedLoader;
 
 public static class NativeEntryPoint
 {
-    private static ModLoader loaderInst = null!;
+    private static ModLoader? loaderInst = null!;
     
     [UnmanagedCallersOnly]
     public static int LoaderMain(IntPtr arg, int argByteSize)
     {
+        if (loaderInst != null)
+        {
+            ModLoader.Logger.Information("Second call LoaderMain: {Argument}", arg);
+            var runner = Marshal.PtrToStructure<RunnerInterface>(arg);
+
+            unsafe
+            {
+                runner.YYError("MEOW", new RuntimeArgumentHandle());
+            }
+            
+            return 1;
+        }
+        
         try
         {
             RunLoader();

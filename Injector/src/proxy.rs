@@ -1,8 +1,7 @@
 use lazy_static::lazy_static;
 use libloading::Library;
 use libloading::Symbol;
-use std::ffi::c_char;
-use std::ffi::c_void;
+use std::ffi::{c_char, c_void};
 use std::fmt::Write;
 use std::path;
 use windows::Win32;
