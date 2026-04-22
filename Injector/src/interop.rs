@@ -21,7 +21,13 @@ pub extern "system" fn extension_init(runner: *const c_void, runner_size: usize)
     log::info!("Sent runner interop to managed code");
 }
 
-#[unsafe(no_mangle)]
-pub extern "system" fn vsml_interop_test() -> *const u8 {
-    "meow!".as_ptr()
+#[unsafe(export_name = "?interop_call@@YAXAEAURValue@@PEAVCInstance@@1HPEAU1@@Z")]
+pub extern "system" fn interop_call(
+    result: *const c_void,
+    self_inst: *const c_void,
+    other_inst: *const c_void,
+    argc: i32,
+    arg: *const c_void,
+) {
+    log::info!("interop_call({result:?}, {self_inst:?}, {other_inst:?}, {argc}, {arg:?})");
 }

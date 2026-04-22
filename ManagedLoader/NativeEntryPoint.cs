@@ -20,7 +20,7 @@ public static class NativeEntryPoint
             var runner = Marshal.PtrToStructure<RunnerInterface>(arg);
             loaderInst.SetupInterop(new SafeRunner(runner));
             
-            return 1;
+            return 0;
         }
         
         try
@@ -42,6 +42,12 @@ public static class NativeEntryPoint
             if(loaderInst?.ProgressTracker is IDisposable d)
                 d.Dispose();
         }
+    }
+
+    [UnmanagedCallersOnly]
+    public static void InteropCall(IntPtr result, IntPtr self, IntPtr other, int argc, IntPtr args)
+    {
+        ModLoader.Logger.Debug("InteropCall(argc={Argc})", argc);
     }
 
     private static void RunLoader()
