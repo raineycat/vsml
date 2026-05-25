@@ -1,6 +1,7 @@
+set windows-shell := ["C:\\Program Files\\Git\\bin\\sh.exe", "-c"]
+
 build_cfg := "Debug"
 dist_dir := "vsml-dist"
-set windows-shell := ["C:\\Program Files\\Git\\bin\\sh.exe", "-c"]
 
 git_branch := shell("git rev-parse --abbrev-ref HEAD")
 git_commit := shell("git rev-parse --short HEAD")
@@ -8,7 +9,6 @@ git_commit := shell("git rev-parse --short HEAD")
 cargo_args := if build_cfg == "Release" { "--release" } else { "" }
 injector_bin := if os() == "linux" { "Injector" / "target" / "x86_64-pc-windows-msvc" } else { "Injector" / "target" }
 
-dotnet_args := if os() == "linux" { "-p:EnableWindowsTargeting=true" } else { "" }
 loader_bin := "ManagedLoader" / "bin" / build_cfg / "net9.0"
 loadscreen_bin := "LoadingWindow" / "bin" / build_cfg / "net9.0-windows" / "win-x64"
 chart_mod_bin := "CustomChartLoader" / "bin" / build_cfg / "net9.0"
@@ -20,6 +20,11 @@ default:
 
 fetch-submodules:
     git submodule update --init --recursive
+
+make-nuget:
+    dotnet build -c:Release ModContract/ModContract.csproj
+    rm -f *.nupkg
+    dotnet pack ModApi.nuspec
 
 [windows]
 make-zip: make-dist
@@ -91,7 +96,7 @@ clean-injector:
     cargo clean
 
 build-loader:
-    dotnet build -c:{{build_cfg}} {{dotnet_args}}
+    dotnet build -c:{{build_cfg}}
 
 clean-loader:
     rm -rf */bin

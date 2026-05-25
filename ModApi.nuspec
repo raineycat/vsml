@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <!-- Required elements-->
+        <id>VSML.ModApi</id>
+        <version>1.0.0</version>
+        <description>Package needed to make VSML mods</description>
+        <authors>raineycat</authors>
+        <readme>README.md</readme>
+        <license type="expression">MIT</license>
+        <projectUrl>https://github.com/raineycat/vsml</projectUrl>
+        <repository type="git" url="https://github.com/raineycat/vsml.git" />
+
+        <dependencies>
+            <group targetFramework="net9.0">
+                <dependency id="Serilog" version="4.3.0" exclude="Build,Analyzers" />
+            </group>
+        </dependencies>
+    </metadata>
+    
+    <files>
+        <file src="LICENSE.txt" />
+        <file src="ModContract/README.md" />
+        <file src="ModContract/bin/Release/net9.0/ModContract.dll" target="lib\net9.0\" />
+        <file src="ModContract/bin/Release/net9.0/Underanalyzer.dll" target="lib\net9.0\" />
+        <file src="ModContract/bin/Release/net9.0/UndertaleModLib.dll" target="lib\net9.0\" />
+    </files>
+</package>

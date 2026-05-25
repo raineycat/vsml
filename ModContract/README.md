@@ -21,6 +21,12 @@ public class ChartMod : IModInit
         progressTracker.SetCurrentStep("Loading sample mod");
         // do setup
     }
+    
+    public IEnumerable<string> RegisterDependentFiles()
+    {
+        // the loader will re-run your patching code if it detects this file has changed
+        return ["some_file.txt"];
+    }
 
     public void ApplyPatches(IPatchApplicator applicator)
     {

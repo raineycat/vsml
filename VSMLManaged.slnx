@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/Additional items/">
     <File Path="Justfile" />
+    <File Path="LICENSE.txt" />
+    <File Path="ModApi.nuspec" />
     <File Path="ModifierCommands.gml" />
     <File Path="README.md" />
   </Folder>
