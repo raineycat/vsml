@@ -24,21 +24,13 @@ log = "0.4.29"
 libloading = "0.9.0"
 lazy_static = "1.5.0"
 anyhow = "1.0.101"
+netcorehost = "0.20.0"
+libc = "0.2.181"
 
 # we need the alpha version because the last stable one
 # depends on udis86-sys, which doesn't compile using clang-cl
 # as far as I can tell
 retour = "=0.4.0-alpha.4"
-libc = "0.2.181"
-
-[dependencies.netcorehost]
-version = "0.20.0"
-default-features = false
-features = [
-  "net9_0",
-  "nethost-download",
-  "utils"
-]
 
 [dependencies.windows]
 version = ">=0.59, <=0.62"

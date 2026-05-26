@@ -8,7 +8,7 @@ public static class Utils
 {
     public static string HashFileFast(string path)
     {
-        const int bufferSize = 1024 * 256;
+        const int bufferSize = 1024 * 1024;
         using var stream = new FileStream(path, 
             FileMode.Open, 
             FileAccess.Read, 
@@ -19,13 +19,17 @@ public static class Utils
         var hash = new XXH64();
         var buffer = new byte[bufferSize];
         int bytesRead;
-
-        while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
+        
+        do
+        {
+            bytesRead = stream.Read(buffer);
             hash.Update(buffer.AsSpan(0, bytesRead));
+        } while (bytesRead > 0);
+        ModLoader.Logger.Verbose("Finished hash loading");
 
-        stream.Dispose();
-
-        return Convert.ToHexStringLower(hash.DigestBytes());
+        var digest = Convert.ToHexStringLower(hash.DigestBytes());
+        ModLoader.Logger.Verbose("Hashed {Path}: {Digest}", path, digest);
+        return digest;
     }
 
     public static void AddToLoadPath(string dir)
