@@ -93,12 +93,13 @@ public class ModLoader : IGameEnv
         ScanMods();
         
         Logger.Information("Finished loader pre-init");
-
+        
         _currentState.DependentFileHashes.Add("_LOADER", Utils.HashFileFast(Path.Combine(LoaderDataFolder, "Core", "ManagedLoader.dll")));
         
         Logger.Debug("Registering mod dependency files");
         foreach (var file in _modInitializers.SelectMany(m => m.RegisterDependentFiles()))
         {
+            Logger.Verbose("Found dependent file: {Path}", file);
             if (!File.Exists(file))
             {
                 Logger.Warning("Dependency file {Path} doesnt exist!", file);
@@ -111,6 +112,7 @@ public class ModLoader : IGameEnv
             _currentState.DependentFileHashes.Add(file, hash);
         }
 
+        ProgressTracker.SetCurrentStep("Comparing states");
         var stateFilePath = Path.Combine(LoaderDataFolder, "state.json");
         if (File.Exists(stateFilePath))
         {
@@ -124,6 +126,7 @@ public class ModLoader : IGameEnv
         }
         
         File.WriteAllText(stateFilePath, JsonSerializer.Serialize(_currentState));
+        Logger.Debug("Serialised state to disk");
     }
 
     public void RunPatching()
@@ -137,7 +140,18 @@ public class ModLoader : IGameEnv
             Logger.Debug("Loading data...");
             ProgressTracker.SetCurrentStep("Loading data from disk");
             var sw = Stopwatch.StartNew();
-            _gameData = UndertaleIO.Read(stream);
+
+            UndertaleReader.WarningHandlerDelegate warningHandler = (msg, important) =>
+            {
+                Logger.Warning("UMT: {Message} (Important = {Important})", msg, important);
+            };
+
+            UndertaleReader.MessageHandlerDelegate messageHandler = msg =>
+            {
+                Logger.Debug("UMT: {Message}", msg);
+            };
+            
+            _gameData = UndertaleIO.Read(stream, warningHandler, messageHandler);
             Logger.Information("Finished loading data! Took {ElapsedTime}", sw.Elapsed);
             stream.Close();
         }
@@ -171,6 +185,9 @@ public class ModLoader : IGameEnv
     private void ScanMods()
     {
         var modsDir = Path.Combine(LoaderDataFolder, "Mods");
+        if (!Directory.Exists(modsDir))
+            Directory.CreateDirectory(modsDir);
+        
         foreach (var dll in Directory.EnumerateFiles(modsDir, "*.dll", SearchOption.AllDirectories))
         {
             if(File.Exists(Path.ChangeExtension(dll, "exe")))

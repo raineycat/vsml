@@ -9,10 +9,10 @@ cargo_args := if build_cfg == "Release" { "--release" } else { "" }
 injector_bin := if os() == "linux" { "Injector" / "target" / "x86_64-pc-windows-msvc" } else { "Injector" / "target" }
 
 dotnet_args := if os() == "linux" { "-p:EnableWindowsTargeting=true" } else { "" }
-loader_bin := "ManagedLoader" / "bin" / build_cfg / "net9.0"
-loadscreen_bin := "LoadingWindow" / "bin" / build_cfg / "net9.0-windows" / "win-x64"
-chart_mod_bin := "CustomChartLoader" / "bin" / build_cfg / "net9.0"
-debug_mod_bin := "DebuggingMod" / "bin" / build_cfg / "net9.0"
+loader_bin := "ManagedLoader" / "bin" / build_cfg / "net10.0"
+loadscreen_bin := "LoadingWindow" / "bin" / build_cfg / "net10.0-windows" / "win-x64"
+chart_mod_bin := "CustomChartLoader" / "bin" / build_cfg / "net10.0"
+debug_mod_bin := "DebuggingMod" / "bin" / build_cfg / "net10.0"
 
 default:
     @echo "[ VSML - {{git_branch}}/{{git_commit}} ]"
@@ -66,7 +66,8 @@ make-dev: build-runtime
     cp {{loadscreen_bin}}/LoadingWindow.{exe,dll,runtimeconfig.json} {{dist_dir}}/VSML/Core/
 
     # copy built in mods
-    cp {{chart_mod_bin}}/CustomChartLoader.dll {{dist_dir}}/VSML/Mods/    
+    # FIXME: chart mod is broken (and probably should get remade anyway) so i'm removing it for now
+    # cp {{chart_mod_bin}}/CustomChartLoader.dll {{dist_dir}}/VSML/Mods/    
     cp {{debug_mod_bin}}/DebuggingMod.dll {{dist_dir}}/VSML/Mods/  
     
     # copy other assets
