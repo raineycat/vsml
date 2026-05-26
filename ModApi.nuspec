@@ -3,7 +3,7 @@
     <metadata>
         <!-- Required elements-->
         <id>VSML.ModApi</id>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
         <description>Package needed to make VSML mods</description>
         <authors>raineycat</authors>
         <readme>README.md</readme>
@@ -12,7 +12,7 @@
         <repository type="git" url="https://github.com/raineycat/vsml.git" />
 
         <dependencies>
-            <group targetFramework="net9.0">
+            <group targetFramework="net10.0">
                 <dependency id="Serilog" version="4.3.0" exclude="Build,Analyzers" />
             </group>
         </dependencies>
@@ -21,8 +21,8 @@
     <files>
         <file src="LICENSE.txt" />
         <file src="ModContract/README.md" />
-        <file src="ModContract/bin/Release/net9.0/ModContract.dll" target="lib\net9.0\" />
-        <file src="ModContract/bin/Release/net9.0/Underanalyzer.dll" target="lib\net9.0\" />
-        <file src="ModContract/bin/Release/net9.0/UndertaleModLib.dll" target="lib\net9.0\" />
+        <file src="ModContract/bin/Release/net10.0/ModContract.dll" target="lib\net10.0\" />
+        <file src="ModContract/bin/Release/net10.0/Underanalyzer.dll" target="lib\net10.0\" />
+        <file src="ModContract/bin/Release/net10.0/UndertaleModLib.dll" target="lib\net10.0\" />
     </files>
 </package>
