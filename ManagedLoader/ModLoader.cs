@@ -118,7 +118,7 @@ public class ModLoader : IGameEnv
         var stateFilePath = Path.Combine(LoaderDataFolder, "state.json");
         if (File.Exists(stateFilePath))
         {
-            Logger.Debug("Checking previous state file");
+            Logger.Debug("Checking previous state file: {Path}", stateFilePath);
             var oldState = JsonSerializer.Deserialize<PatchState>(File.ReadAllText(stateFilePath)) ?? new();
             var matches = _currentState.OriginalDataHash == oldState.OriginalDataHash &&
                           _currentState.DependentFileHashes.Values.ToImmutableSortedSet()
@@ -186,7 +186,8 @@ public class ModLoader : IGameEnv
 
     public void SetupInterop(SafeRunner runner)
     {
-        runner.ShowMessage("meowing!");
+        runner.ShowMessage("Interop loaded!");
+        new FunctionLogger().RunPatching();
     }
 
     private void ScanMods()
